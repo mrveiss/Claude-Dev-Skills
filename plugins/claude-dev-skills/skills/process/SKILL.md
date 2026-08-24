@@ -47,3 +47,9 @@ when the reference is not read:
 - A guard narrower than its own subject reads as coverage.
 - A green run describes the merge base it checked out, which may have moved.
 - Run the exploit; do not read the code and conclude the guard holds.
+
+## Credits
+
+Consolidates and adapts the Superpowers suite by Jesse Vincent (obra,
+https://github.com/obra/superpowers) and Anthropic's official skill-authoring guidance. The
+routing above is original; the adapted reference material is local-only and not redistributed.

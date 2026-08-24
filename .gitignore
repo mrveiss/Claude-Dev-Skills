@@ -1,18 +1,11 @@
-# Reference material carried from third-party skills for local use only.
-# Not redistributed — these remain the property of their original authors.
-references/
-# WSL / Windows download marks
+# Reference material adapted from third-party skills for local enrichment only.
+# Not redistributed — property of their original authors. Present on the dev
+# machine, absent from the published/installed plugin (the router SKILL.md files
+# stay useful without them).
+plugins/*/skills/*/references/
+
+# WSL / Windows download marks and local backups
 *:Zone.Identifier
-# Packaged skill bundles and backups — the SKILL.md is the source of truth
 *.skill
 *.bak
 *.bak.*
-# Symlinked skills that live in another repo — not ours to redistribute here:
-#   batch-implement lives in the AutoBot-AI codebase (docs/developer/skills/)
-#   autobot-llc lives in the AutoBot-AI codebase (autobot-backend/llc/skills/)
-#   the rest are Paperclip's own skills
-autobot-llc
-diagnose-why-work-stopped
-para-memory-files
-terminal-bench-loop
-batch-implement

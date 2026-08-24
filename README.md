@@ -1,68 +1,79 @@
-# AutoBot Skills
+# Claude Dev Skills
 
-Custom [Claude Code](https://claude.com/claude-code) skills for the AutoBot-AI platform — the
-working discipline for implementing issues, reviewing and merging PRs, auditing the codebase,
-debugging the full stack, and designing UI, distilled into one place.
+A portable [Claude Code](https://claude.com/claude-code) plugin — the development discipline for
+implementing issues, reviewing and merging PRs, auditing a codebase, debugging the full stack,
+and designing UI, packaged as one installable set. Kept separate from any project so the setup
+moves to a new machine with a single install.
 
 Copyright © 2026 mrveiss · Apache-2.0.
 
 ## Install
 
-Clone into your Claude Code skills directory:
+This repo is a Claude Code plugin marketplace. In Claude Code:
 
-```bash
-git clone https://github.com/mrveiss/autobot-skills.git ~/.claude/skills
+```
+/plugin marketplace add mrveiss/Claude-Dev-Skills
+/plugin install claude-dev-skills@claude-dev-skills
 ```
 
-Each skill is a directory with a `SKILL.md`. Claude Code loads them automatically; invoke one
-with `/<name>` or let it trigger on the described intent.
+The first command registers the marketplace; the second installs the skill set. On a new machine,
+those two lines restore the whole setup.
 
 ## Skills
 
-### Working an issue
+### Process & discipline
 
-- **`implement`** — End-to-end GitHub issue implementation — umbrella gate, worktree, design, code, verify, PR, CI, and the three-gate closure check
-- **`drain`** — Pick and solve the backlog issues that need no decision
-- **`pr`** — Create a pull request with pre-flight branch checks, targeting Dev_new_gui by default
+- **`process`** — How to approach work before writing code — exploring a request before building, planning a multi-step change, debugging a failure methodical
 - **`commit`** — Standardized commit workflow with pre-flight checks, auto-format, and retry logic for pre-commit hooks
-- **`pre-merge-validate`** — Validate code before merging — syntax, imports, call-site impact, tests, types, and linting
-
-### Review
-
-- **`review`** — Run a PR review cycle — CI diagnosis, a three-angle finder pass, lint-only auto-fix, and the merge decision
-- **`review-fleet`** — Dispatch a 10-angle parallel PR review fleet (finder agents + verifier agents) that posts only confirmed, deduplicated findings to a single PR comment
-- **`review-lenses`** — Domain review lenses — architecture, delivery, frontend, documentation, UX, and visual craft
-
-### Auditing a codebase
-
-- **`api-wiring-audit`** — Audit and enforce frontend/backend API contract wiring in AutoBot-AI (or any FastAPI + SPA monorepo)
-- **`dead-code-audit`** — Systematic codebase audit for unwired code — identify unregistered routers, uninvoked hooks, orphaned components, and file discovery issues
-- **`gap-audit`** — After completing a batch fix or implementation, audit adjacent files for the same issue and file GitHub discovery issues for each gap found
 - **`canonical-coding`** — The canonical-source discipline for ALL code changes in this repository
+
+### Review & audit
+
+- **`review-lenses`** — Domain review lenses — architecture, delivery, frontend, documentation, UX, and visual craft
+- **`gap-audit`** — After completing a batch fix or implementation, audit adjacent files for the same issue and file GitHub discovery issues for each gap found
 - **`web-audit`** — Full security, SEO, and AI-friendliness audit for any website
-
-### Debugging
-
-- **`debug-autobot`** — Debug any AutoBot failure across the full stack — dispatches parallel investigators per layer (Vue, FastAPI, Redis, ChromaDB, NPU, Browser, AI Stack),
 
 ### Design
 
-- **`ui-design`** — Design, build, review, or polish any user interface — visual direction, typography, color, layout, spacing, motion, accessibility, responsive behaviou
+- **`ui-design`** — Design, build, review, or polish any user interface — visual direction, typography, color, layout, spacing, motion, accessibility, responsiv
 
-### Process & session
+### Memory
 
-- **`process`** — How to approach work before writing code — exploring a request before building, planning a multi-step change, debugging a failure methodically, verify
-- **`session-lifecycle`** — Mandatory start-of-session and end-of-session protocol for every Claude Code session in this repository
 - **`memory-cleanup`** — End-of-session memory hygiene ritual
 
-### Platform
+## Layout
 
-- **`github-cli`** — Use when performing any GitHub operation — issues, PRs, comments, labels, reviews, merges, file contents, branch management, or repository queries
+```
+.claude-plugin/marketplace.json          the marketplace manifest
+plugins/claude-dev-skills/
+  .claude-plugin/plugin.json             the plugin manifest
+  skills/<name>/SKILL.md                 one skill each
+```
+
+## Acknowledgments
+
+Two skills here consolidate and adapt the work of other skill authors. The `SKILL.md` router
+files are original to this repo, but they stand on ideas — and, on the dev machine, local
+`references/` material — from the skills below. That reference material is **not redistributed
+here** (it stays git-ignored); credit and thanks go to its authors:
+
+- **`process`** consolidates the [Superpowers](https://github.com/obra/superpowers) skill suite
+  by **Jesse Vincent** (`obra`) — brainstorming, TDD, systematic debugging, verification,
+  planning, worktrees, and the subagent workflows. Its skill-authoring guidance also points to
+  **Anthropic's** official best practices.
+- **`ui-design`** consolidates five design skills: the polish-and-motion guidance encodes
+  **Emil Kowalski's** philosophy on UI detail and animation; `frontend-design` is **Anthropic's**
+  (from `claude-plugins-official`); and the systems/stacks, anti-slop, and audit lenses come from
+  the **ui-ux-pro-max**, **taste-skill**, and **impeccable** skills respectively.
+
+Where an author's name was not recorded in the source, the skill is credited by its name. If you
+authored one of these and want different or removed attribution, open an issue.
 
 ## Conventions
 
 - **One canonical skill per job.** No `-v2` or `-fix` variants; consolidate rather than fork.
-- **A skill is a checklist, not a manual.** Substance beyond a page goes in the skill's own
+- **A skill is a checklist, not a manual.** Substance beyond a page lives in the skill's own
   `references/` directory and is read on demand.
-- Some skills carry local `references/` material adapted from third-party skills for personal
-  use; that material is git-ignored and not redistributed here.
+- Two skills (`ui-design`, `process`) can carry extra `references/` material adapted from
+  third-party skills for local enrichment. That material is git-ignored and not distributed; the
+  router `SKILL.md` stays useful without it.

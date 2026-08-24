@@ -1,0 +1,10 @@
+{
+  "name": "claude-dev-skills",
+  "description": "Custom development skills for Claude Code — issue implementation, PR review, codebase auditing, full-stack debugging, and UI design. Portable across machines; install once, get the whole working discipline.",
+  "version": "1.0.0",
+  "author": {
+    "name": "mrveiss",
+    "url": "https://github.com/mrveiss"
+  },
+  "license": "Apache-2.0"
+}

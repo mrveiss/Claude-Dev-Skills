@@ -1,0 +1,19 @@
+{
+  "name": "claude-dev-skills",
+  "owner": {
+    "name": "mrveiss",
+    "url": "https://github.com/mrveiss"
+  },
+  "metadata": {
+    "description": "Custom Claude Code development skills — issue implementation, PR review, codebase auditing, full-stack debugging, and UI design.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "claude-dev-skills",
+      "source": "./plugins/claude-dev-skills",
+      "description": "One installable set of general-purpose development skills: the working discipline for implementing issues, reviewing and merging PRs, auditing a codebase, debugging the full stack, and designing UI.",
+      "version": "1.0.0"
+    }
+  ]
+}

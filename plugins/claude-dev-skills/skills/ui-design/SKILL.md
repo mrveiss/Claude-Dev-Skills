@@ -25,16 +25,18 @@ instead of reading everything.
 `app-interface.csv`, `ui-reasoning.csv`, `react-performance.csv`, and `stacks/`. Grep the table;
 never read a whole CSV into context.
 
-## Non-negotiable in this codebase
+## Non-negotiable
 
-These win over anything a reference file says.
+The project's own conventions win over anything a reference file says — read them first, then:
 
-- **No hardcoded UI strings.** Every string is i18n'd across all 11 locales — no exceptions.
-- **No `console.*`.** Use `createLogger('Name')`.
-- **Config via SSOT** — `import { getBackendUrl } from '@/config/ssot-config'`. No IPs, no ports.
+- **No hardcoded UI strings.** Route every user-facing string through the project's i18n layer,
+  in every configured locale — no exceptions.
+- **No stray `console.*`.** Use the project's logger.
+- **Config through the project's single source of truth** — no hardcoded URLs, IPs, or ports.
 - **One canonical name.** No `Enhanced`/`Unified`/`V2` prefixes on components or composables.
-- **Reuse before creating.** Check the shared kit before adding a component, composable, or token.
-- **Frontend lint is oxlint AND eslint** — `npx eslint` alone passes while CI fails.
+- **Reuse before creating.** Check the shared component/token kit before adding to it.
+- **Run every linter the project runs**, not just one — a second linter can fail what the first
+  passed.
 - **Theme both directions.** Tokens on bare `:root`; redefine under
   `@media (prefers-color-scheme: dark)` guarded as `:root:not([data-theme="light"])`, and again
   under `:root[data-theme="dark"]`. A color defined only inside a media or `[data-theme]` block
@@ -65,6 +67,12 @@ Where the user names a direction, follow it exactly — including when it is one
 - [ ] Treatment matches the brief; nothing over-designed
 - [ ] Existing design system honored, not overridden
 - [ ] Both themes resolve; no color defined only behind a media or `[data-theme]` block
-- [ ] Every string i18n'd across 11 locales; no `console.*`; no hardcoded config
-- [ ] oxlint AND eslint clean
+- [ ] Every string i18n'd in all configured locales; no stray logging; no hardcoded config
+- [ ] Every linter the project runs is clean, not just one
 - [ ] Wide content scrolls in its own container; focus visible; reduced-motion respected
+
+## Credits
+
+Consolidates and adapts five design skills: Emil Kowalski's UI polish/motion philosophy,
+Anthropic's frontend-design, and the ui-ux-pro-max, taste-skill, and impeccable skills. The
+routing above is original; the adapted reference material is local-only and not redistributed.
