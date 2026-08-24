@@ -1,7 +1,7 @@
 # Reference material adapted from third-party skills for local enrichment only.
 # Not redistributed — property of their original authors. Present on the dev
-# machine, absent from the published/installed plugin (the router SKILL.md files
-# stay useful without them).
+# machine, absent from the published/installed plugin. Every published SKILL.md is
+# fully self-contained and does NOT depend on this directory.
 plugins/*/skills/*/references/
 
 # WSL / Windows download marks and local backups

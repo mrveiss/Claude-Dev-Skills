@@ -5,51 +5,85 @@ description: How to approach work before writing code — exploring a request be
 
 # Process
 
-The approach discipline, in one place. Fourteen process guides live in `references/` — read the
-one the task calls for, never the folder.
+The discipline that goes before the code. Self-contained — each section is the actual practice,
+not a pointer. When a project's own instructions disagree with anything here, the project wins;
+this is technique, not law.
 
-**CLAUDE.md wins.** Where a reference disagrees with the project or global instructions, the
-instructions are canonical. These are technique; the rules are law.
+## Brainstorm before building anything new
 
-## Route
+Before writing a feature, component, or behaviour change, separate *what* from *how*. Say back
+the goal in one sentence and name who it is for. Surface the assumptions the request hides — the
+unstated input shape, the failure the user actually fears, the case that makes the naive version
+wrong. Offer two or three genuinely different approaches with their trade-offs, not one plan
+dressed three ways. Only once the intent is pinned do you design. Skipping this is how you build
+the wrong thing quickly.
 
-| Situation | Read |
-|---|---|
-| A feature, component, or behaviour change is being asked for — before designing it | `references/brainstorming/` |
-| A spec exists and a multi-step change needs a written plan | `references/writing-plans/` |
-| A written plan needs executing across sessions with checkpoints | `references/executing-plans/` |
-| Independent tasks could run at once | `references/dispatching-parallel-agents/` · `references/subagent-driven-development/` |
-| A bug, test failure, or unexpected behaviour — **before proposing a fix** | `references/systematic-debugging/` |
-| Implementing a feature or bugfix, before writing implementation code | `references/test-driven-development/` |
-| About to say "done", "fixed", or "passing" | `references/verification-before-completion/` |
-| Asking for, or receiving, code review | `references/requesting-code-review/` · `references/receiving-code-review/` |
-| Implementation is complete and needs integrating | `references/finishing-a-development-branch/` |
-| An isolated workspace is needed | `references/using-git-worktrees/` |
-| Authoring or editing a skill | `references/writing-skills/` |
+## Write the plan when the change has more than a few steps
 
-## The four that are not optional here
+A plan is a list of small, individually verifiable steps, each with a way to tell it worked.
+Group by responsibility, not by file type — things that change together live together. Name the
+risk in each step and what you'll check before moving on. A plan you can't check off step by step
+is a wish, not a plan. For work spanning sessions, write it to a file so the next session resumes
+from state, not memory.
 
-Taken from the references above and hardened by this project's own history — these hold even
-when the reference is not read:
+## Debug by reproducing, never by guessing
 
-1. **Evidence before "done".** Every completion claim cites an artifact — issue #, PR link,
-   commit SHA, CI status, test output. "Clean" and "all passing" need the run pasted.
-2. **Reproduce before fixing.** Verify a fix against the failing reproduction *and* the case that
-   must still be caught. Testing the predicate instead of the reproduction proves nothing.
-3. **A worktree per code-touching task**, branched off the PR base. The main tree stays read-only.
-4. **Root cause, not workaround.** No TODO comments, no swallowed errors, no temp fixes. Stuck
-   after three attempts is an escalation with findings, not a fourth attempt.
+When something fails, do not propose a fix from the stack trace alone. First reproduce it
+deterministically — the smallest input that triggers it. Then form one hypothesis about the
+cause and test *that*, changing one thing at a time. A fix is proven only when it makes the
+reproduction pass **and** still rejects the case the code was meant to reject. The most common
+error is fixing the predicate you imagined instead of the reproduction in front of you. If three
+hypotheses fail, stop and gather more evidence rather than trying a fourth blind change.
 
-## Traps this project keeps hitting
+## Test-drive the implementation
 
-- An empty or absent result reads as a clean result — check for presence, not for absence of failure.
-- A test that hand-builds its input passes while production never emits that shape.
-- A guard narrower than its own subject reads as coverage.
-- A green run describes the merge base it checked out, which may have moved.
-- Run the exploit; do not read the code and conclude the guard holds.
+Before the implementation code, write the test that will fail without it — the one that pins the
+behaviour you're about to build. Watch it fail for the right reason (not a typo, not a missing
+import). Then write the least code that makes it pass. Assert on behaviour and observable output,
+not on source text or internal shape. A test that can't fail proves nothing; a test fed a shape
+no producer ever emits proves less than nothing.
+
+## Verify before you claim it's done
+
+"Done", "fixed", and "passing" are claims that need evidence. Run the command and read its output
+before you say the words — an empty or absent result is not a pass, it is an unchecked result.
+Cite the artifact: the test output, the exit code, the diff, the run link. If you did not run it,
+say you did not run it. Never let a green that you assumed stand in for a green that you saw.
+
+## Dispatch parallel agents only for genuinely independent work
+
+Two tasks parallelise cleanly only when neither reads what the other writes and they share no
+ordering. When that holds, give each agent an isolated context and a crisp, self-contained brief —
+it cannot see your conversation. Prefer a pipeline (each item flows through all stages
+independently) over a barrier (wait for every item at each stage) unless a later stage genuinely
+needs the whole previous set at once. Collect results, then decide; don't let an agent's raw
+output flood back unfiltered.
+
+## Finish the branch before you call the work integrated
+
+Implementation complete is not integrated. Before merging: the tests pass and you saw them pass;
+the branch is not behind its base (a green run describes the base it checked out, which may have
+moved); nothing new is left unwired — every new module has a caller, or a tracked follow-up says
+why not. Then integrate, and only then dispose of the workspace.
+
+## The four that are never optional
+
+1. **Evidence before "done."** Every completion claim cites an artifact.
+2. **Reproduce before fixing.** Verify against the failing case *and* the case that must still fail.
+3. **Isolate the work.** A worktree or branch per code-touching task; the shared tree stays clean.
+4. **Root cause, not workaround.** No TODO-later, no swallowed error. Stuck after three real
+   attempts is an escalation with findings, not a fourth guess.
+
+## Traps that recur
+
+- An empty or absent result reads as a clean result — check for the presence of success, not the absence of failure.
+- A test that hand-builds its own input passes while production never produces that shape.
+- A guard narrower than its own subject reads as coverage while leaving the gap open.
+- A green run describes the merge base it checked out; a moved base can invalidate it.
+- Run the exploit; do not read the guard and conclude it holds.
 
 ## Credits
 
-Consolidates and adapts the Superpowers suite by Jesse Vincent (obra,
-https://github.com/obra/superpowers) and Anthropic's official skill-authoring guidance. The
-routing above is original; the adapted reference material is local-only and not redistributed.
+The practice distilled here was shaped by the [Superpowers](https://github.com/obra/superpowers)
+skill suite by Jesse Vincent (obra) and Anthropic's skill-authoring guidance. This text is an
+original, self-contained rewrite; for the full upstream treatment of any topic, see that repo.
