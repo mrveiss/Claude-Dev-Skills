@@ -5,6 +5,12 @@ implementing issues, reviewing and merging PRs, auditing a codebase, debugging t
 and designing UI, packaged as one installable set. Kept separate from any project so the setup
 moves to a new machine with a single install.
 
+> **Origin.** These skills emerged in the course of developing
+> [AutoBot-AI](https://github.com/mrveiss/AutoBot-AI) — a distributed autonomous-agent
+> platform. They are the general, project-agnostic half of that working discipline, extracted so
+> the practice travels beyond the project that produced it. The AutoBot-specific skills live with
+> AutoBot itself.
+
 Copyright © 2026 mrveiss · Apache-2.0.
 
 ## Install
