@@ -10,7 +10,8 @@ machine in two commands.
 > [AutoBot-AI](https://github.com/mrveiss/AutoBot-AI) — a distributed autonomous-agent platform.
 > They are the general, project-agnostic half of that discipline, extracted so the practice
 > travels beyond the project that produced it. The AutoBot-specific skills (issue implementation,
-> PR mechanics, stack debugging, deploy) live with AutoBot itself.
+> PR mechanics, stack debugging) live in
+> [AutoBot-AI-Claude-dev-skills](https://github.com/mrveiss/AutoBot-AI-Claude-dev-skills).
 
 Copyright © 2026 mrveiss · Apache-2.0.
 
