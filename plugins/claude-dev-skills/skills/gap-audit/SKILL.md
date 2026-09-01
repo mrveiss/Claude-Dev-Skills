@@ -53,6 +53,12 @@ Run after completing work to catch similar issues in adjacent files that weren't
      --label "discovered,gap"
    ```
 
+   Then attach it natively — a prose "found during #N" is not a relationship:
+   ```bash
+   gh api -X POST repos/$REPO/issues/$UMBRELLA/sub_issues \
+     -F sub_issue_id=$(gh api repos/$REPO/issues/$NEW -q .id)
+   ```
+
 6. **Report** — output a summary:
    - Total candidates checked
    - Gaps found (with issue numbers filed)
