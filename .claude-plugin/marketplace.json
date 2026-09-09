@@ -5,14 +5,14 @@
     "url": "https://github.com/mrveiss"
   },
   "metadata": {
-    "description": "Custom Claude Code development skills — issue implementation, PR review, codebase auditing, full-stack debugging, and UI design.",
+    "description": "General-purpose Claude Code skills that encode how to work — exploring a request before building, planning and debugging methodically, reviewing and auditing, designing UI, committing cleanly, and keeping memory tidy.",
     "version": "1.0.0"
   },
   "plugins": [
     {
       "name": "claude-dev-skills",
       "source": "./plugins/claude-dev-skills",
-      "description": "One installable set of general-purpose development skills: the working discipline for implementing issues, reviewing and merging PRs, auditing a codebase, debugging the full stack, and designing UI.",
+      "description": "One installable set of project-agnostic development skills: canonical-source discipline, methodical process, domain review lenses, gap and website audits, UI design, clean commits, and end-of-session memory hygiene.",
       "version": "1.0.0"
     }
   ]
