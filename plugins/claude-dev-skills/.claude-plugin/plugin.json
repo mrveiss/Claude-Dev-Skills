@@ -1,7 +1,7 @@
 {
   "name": "claude-dev-skills",
-  "description": "Custom development skills for Claude Code — issue implementation, PR review, codebase auditing, full-stack debugging, and UI design. Portable across machines; install once, get the whole working discipline.",
-  "version": "1.0.0",
+  "description": "Project-agnostic development skills for Claude Code — canonical-source discipline, methodical process, domain review lenses, gap and website audits, UI design, clean commits, and end-of-session memory hygiene. Portable across projects; install once, get the whole working discipline.",
+  "version": "1.0.2",
   "author": {
     "name": "mrveiss",
     "url": "https://github.com/mrveiss"
