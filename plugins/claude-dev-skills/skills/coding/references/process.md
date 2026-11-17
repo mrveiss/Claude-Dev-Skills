@@ -1,7 +1,4 @@
----
-name: process
-description: How to approach work before writing code — exploring a request before building, planning a multi-step change, debugging a failure methodically, verifying a claim before calling it done, dispatching parallel agents, and finishing a branch. Use at the START of any non-trivial task, when a bug resists the obvious fix, when about to claim something works, or when a plan needs writing. Not for the domain work itself.
----
+When to use: How to approach work before writing code — exploring a request before building, planning a multi-step change, debugging a failure methodically, verifying a claim before calling it done, dispatching parallel agents, and finishing a branch. Use at the START of any non-trivial task, when a bug resists the obvious fix, when about to claim something works, or when a plan needs writing. Not for the domain work itself.
 
 # Process
 

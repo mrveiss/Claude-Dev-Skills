@@ -1,11 +1,16 @@
-# Reference material adapted from third-party skills for local enrichment only.
-# Not redistributed — property of their original authors. Present on the dev
-# machine, absent from the published/installed plugin. Every published SKILL.md is
-# fully self-contained and does NOT depend on this directory.
-plugins/*/skills/*/references/
-
 # WSL / Windows download marks and local backups
 *:Zone.Identifier
 *.skill
 *.bak
 *.bak.*
+
+# Third-party enrichment under references/ is local only; ship exactly the workflow files.
+plugins/*/skills/*/references/*
+!plugins/claude-dev-skills/skills/coding/references/canonical-coding.md
+!plugins/claude-dev-skills/skills/coding/references/process.md
+!plugins/claude-dev-skills/skills/coding/references/commit.md
+!plugins/claude-dev-skills/skills/coding/references/gap-audit.md
+!plugins/claude-dev-skills/skills/coding/references/memory-cleanup.md
+!plugins/claude-dev-skills/skills/review-lenses/references/review-lenses.md
+!plugins/claude-dev-skills/skills/ui-design/references/ui-design.md
+!plugins/claude-dev-skills/skills/web-audit/references/web-audit.md
