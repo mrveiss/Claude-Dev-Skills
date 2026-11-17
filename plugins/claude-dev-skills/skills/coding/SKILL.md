@@ -1,11 +1,11 @@
 ---
 name: coding
-description: Discipline for any code change and its surrounding workflow — canonical-source rules (never create a helper, wrapper, "v2", endpoint or config that already exists; which source wins when frontend/backend or doc/code disagree), process before coding (explore, plan, debug methodically, verify before claiming done, parallel agents, finishing a branch), clean commits with pre-commit retry, gap audits after a batch fix, and end-of-session memory cleanup. Use whenever writing, modifying, reviewing or planning code, at the start of any non-trivial task, when committing, after a batch fix, or at the end of a session.
+description: Discipline for ANY code change — frontend, backend, infra, migrations, or docs that describe code — and its surrounding workflow: canonical-source rules (never create a helper, wrapper, framework, endpoint, config, schema bootstrap or "v2" of what already exists; which source wins when frontend/backend or plan/doc and code disagree or two implementations of one concept exist), process before coding (explore, plan, debug methodically, verify before claiming done, parallel agents, finishing a branch), clean commits with pre-commit retry, gap audits after a batch fix, and end-of-session memory cleanup. Use whenever writing, modifying, reviewing or planning code; at the start of any non-trivial task, when a bug resists the obvious fix, when about to claim something works, when a plan needs writing, when committing, after a batch fix, and at the end of every session; not for the domain work itself.
 ---
 
 # Coding
 
-Invoke as `/claude-dev-skills:coding <workflow> [args]`; first argument selects the row; no argument → pick the row from the situation.
+Invoke as `/claude-dev-skills:coding <workflow> [args]`; first argument selects the row; no argument, or an unknown first argument → treat the whole input as args and pick the row from the situation.
 
 | Workflow | When | Reference |
 |---|---|---|

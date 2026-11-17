@@ -5,8 +5,8 @@ description: Full security, SEO, and AI-friendliness audit for any website. Runs
 
 # Web Audit
 
-Invoke as `/claude-dev-skills:web-audit <workflow> [args]`; first argument selects the row; no argument → pick the row from the situation.
+Invoke as `/claude-dev-skills:web-audit [args]`; no argument → apply it to the situation.
 
-| Workflow | When | Reference |
+| Topic | When | Reference |
 |---|---|---|
 | `web-audit` | Auditing a website (`/claude-dev-skills:web-audit https://example.com`): security, SEO, AI-friendliness, HTML report | `references/web-audit.md` |

@@ -92,7 +92,7 @@ Skills load automatically and trigger two ways:
    for the same bug" — and the matching skill activates. You do not name it.
 2. **Explicitly.** Invoke one directly with a slash command and pick the workflow with the first
    argument: `/claude-dev-skills:coding process`, `/claude-dev-skills:ui-design`,
-   `/claude-dev-skills:web-audit https://example.com`, and so on.
+   `/claude-dev-skills:web-audit https://example.com`, and so on. The five `coding` workflows load through that one skill's trigger.
 
 Each listed skill is a short router; the detail of each workflow lives in its `references/`
 folder and is read on demand. Everything ships with the plugin — nothing to fetch and nothing to

@@ -5,8 +5,8 @@ description: Design, build, review, or polish any user interface — visual dire
 
 # UI Design
 
-Invoke as `/claude-dev-skills:ui-design <workflow> [args]`; first argument selects the row; no argument → pick the row from the situation.
+Invoke as `/claude-dev-skills:ui-design [args]`; no argument → apply it to the situation.
 
-| Workflow | When | Reference |
+| Topic | When | Reference |
 |---|---|---|
 | `ui-design` | Any interface job: direction, build, polish, redesign, audit, design system | `references/ui-design.md` |

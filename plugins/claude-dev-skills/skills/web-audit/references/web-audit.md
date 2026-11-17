@@ -1,10 +1,10 @@
 When to use: Full security, SEO, and AI-friendliness audit for any website. Runs multi-pass checks covering HTTP headers, DNS/subdomain recon, port scan, TLS, CORS, email spoofing, exposed admin panels, plugin CVEs, open resolvers, FTP, per-page SEO, performance, and compromise indicators. Outputs a self-contained HTML report.
 
-# /web-audit — Full Website Audit
+# /claude-dev-skills:web-audit — Full Website Audit
 
 Performs a comprehensive multi-pass audit of any website and writes a self-contained HTML report to the current working directory.
 
-**Usage:** `/web-audit https://example.com`
+**Usage:** `/claude-dev-skills:web-audit https://example.com`
 
 ---
 

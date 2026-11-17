@@ -5,8 +5,8 @@ description: Domain review lenses — architecture, delivery, frontend, document
 
 # Review Lenses
 
-Invoke as `/claude-dev-skills:review-lenses <workflow> [args]`; first argument selects the row; no argument → pick the row from the situation.
+Invoke as `/claude-dev-skills:review-lenses [args]`; no argument → apply it to the situation.
 
-| Workflow | When | Reference |
+| Topic | When | Reference |
 |---|---|---|
 | `review-lenses` | Any review where the question is "is this good?" — architecture, delivery, frontend, documentation, UX, visual craft | `references/review-lenses.md` |
