@@ -1,9 +1,6 @@
----
-name: memory-cleanup
-description: End-of-session memory hygiene ritual. Run this at the end of every session to keep MEMORY.md an index and every memory reachable from a topic file.
----
+When to use: End-of-session memory hygiene ritual. Run this at the end of every session to keep MEMORY.md an index and every memory reachable from a topic file.
 
-# /memory-cleanup — Session-End Memory Hygiene
+# /claude-dev-skills:coding memory-cleanup — Session-End Memory Hygiene
 
 Run at the end of every work session. Takes ~2 minutes.
 

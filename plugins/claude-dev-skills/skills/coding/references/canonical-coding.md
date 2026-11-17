@@ -1,7 +1,4 @@
----
-name: canonical-coding
-description: The canonical-source discipline for ALL code changes in this repository. Use this skill whenever writing, modifying, reviewing, or planning ANY code — frontend, backend, infra, migrations, or docs that describe code. Especially use it when tempted to create a new helper, wrapper, framework, endpoint, config, schema bootstrap, or "v2" of anything that already exists; when a frontend and backend disagree; when a plan or doc disagrees with the code; or when two implementations of the same concept are found. This skill defines which source wins every conflict.
----
+When to use: The canonical-source discipline for ALL code changes in this repository. Use this skill whenever writing, modifying, reviewing, or planning ANY code — frontend, backend, infra, migrations, or docs that describe code. Especially use it when tempted to create a new helper, wrapper, framework, endpoint, config, schema bootstrap, or "v2" of anything that already exists; when a frontend and backend disagree; when a plan or doc disagrees with the code; or when two implementations of the same concept are found. This skill defines which source wins every conflict.
 
 # Canonical Coding
 

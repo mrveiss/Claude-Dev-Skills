@@ -1,7 +1,7 @@
 # Claude Dev Skills
 
-A portable [Claude Code](https://claude.com/claude-code) plugin — a set of eight general-purpose
-development skills that encode *how to work*: exploring a request before building, planning and
+A portable [Claude Code](https://claude.com/claude-code) plugin — a set of four router
+meta-skills (eight workflows) that encode *how to work*: exploring a request before building, planning and
 debugging methodically, reviewing and auditing, designing UI, committing cleanly, and keeping
 memory tidy. Packaged as one marketplace plugin so the whole working discipline moves to a new
 machine in two commands.
@@ -90,27 +90,32 @@ Skills load automatically and trigger two ways:
 1. **By intent.** Each skill's `description` tells Claude when it applies. Ask for the underlying
    task in plain language — "help me plan this migration", "review this design", "audit the repo
    for the same bug" — and the matching skill activates. You do not name it.
-2. **Explicitly.** Invoke one directly with a slash command: `/process`, `/ui-design`,
-   `/web-audit`, and so on.
+2. **Explicitly.** Invoke one directly with a slash command and pick the workflow with the first
+   argument: `/claude-dev-skills:coding process`, `/claude-dev-skills:ui-design`,
+   `/claude-dev-skills:web-audit https://example.com`, and so on.
 
-Each skill is self-contained: everything it needs is in its `SKILL.md`. There are no external
-files to fetch and nothing to configure before first use.
+Each listed skill is a short router; the detail of each workflow lives in its `references/`
+folder and is read on demand. Everything ships with the plugin — nothing to fetch and nothing to
+configure before first use.
 
 ---
 
-## The eight skills
+## The four skills and their workflows
+
+Only the four skills below are listed in a session; each workflow is a row in the skill's router
+table (`/claude-dev-skills:coding <workflow>`).
 
 ### Process & discipline
 
-- **`process`** — The approach discipline that goes *before* the code: brainstorming intent
+- **`coding process`** — The approach discipline that goes *before* the code: brainstorming intent
   before building, writing a checkable plan, debugging by reproduction instead of guessing,
   test-driving the implementation, verifying a claim before calling it done, dispatching parallel
   agents only for truly independent work, and finishing a branch cleanly. Use at the start of any
   non-trivial task.
-- **`commit`** — A standardized commit workflow: pre-flight branch and staging checks,
+- **`coding commit`** — A standardized commit workflow: pre-flight branch and staging checks,
   auto-format, conventional-commit message shape, and retry logic when a pre-commit hook rewrites
   files.
-- **`canonical-coding`** — The canonical-source discipline: before adding a helper, wrapper, or
+- **`coding canonical-coding`** — The canonical-source discipline: before adding a helper, wrapper, or
   "v2" of anything, find the existing one and consolidate. Defines which source wins when a
   frontend and backend, or a doc and the code, disagree.
 
@@ -119,7 +124,7 @@ files to fetch and nothing to configure before first use.
 - **`review-lenses`** — Six domain lenses for judging whether work is *good*, not merely whether
   it runs — architecture, delivery, frontend, documentation, UX, and visual craft. Use for any
   "is this good?" review.
-- **`gap-audit`** — After a batch fix, sweep the adjacent files for the same defect and file a
+- **`coding gap-audit`** — After a batch fix, sweep the adjacent files for the same defect and file a
   discovery issue per gap found, so a fix in one place doesn't leave siblings broken.
 - **`web-audit`** — A full multi-pass security, SEO, and AI-friendliness audit of any website —
   HTTP headers, TLS, CORS, DNS/subdomain recon, exposed panels, per-page SEO and performance —
@@ -133,7 +138,7 @@ files to fetch and nothing to configure before first use.
 
 ### Memory
 
-- **`memory-cleanup`** — An end-of-session hygiene ritual for a file-based memory system: keep the
+- **`coding memory-cleanup`** — An end-of-session hygiene ritual for a file-based memory system: keep the
   index an index, ensure every entry is reachable from a topic file, and prune what has gone
   stale or duplicated.
 
@@ -159,11 +164,11 @@ claude plugin marketplace remove claude-dev-skills     # optional: forget the ma
 
 ## Contributing
 
-1. **One skill = one responsibility.** If a `SKILL.md` grows past ~700 lines, split it.
-2. **Every published skill must be self-contained.** A skill's `SKILL.md` may not depend on files
-   that aren't committed — an installer only receives what ships. Two skills (`process`,
-   `ui-design`) keep optional local `references/` enrichment on the dev machine; that material is
-   git-ignored and **not** required for the skill to work.
+1. **Few listed skills, detail in references.** Each listed `SKILL.md` is a router of at most 60
+   lines; workflow bodies live in `references/<workflow>.md`, each opening with `When to use:`.
+   Sub-topics are never separately listed skills.
+2. **Every published skill must be self-contained.** A skill may not depend on files that aren't
+   committed — an installer only receives what ships, including `references/`.
 3. **Edit → PR → review.** Workflow-rule changes get the same review as code. State in the PR what
    behaviour changed and why.
 4. **Write the `description` for triggering.** It is how Claude decides when the skill applies —
@@ -175,7 +180,8 @@ claude plugin marketplace remove claude-dev-skills     # optional: forget the ma
 .claude-plugin/marketplace.json          the marketplace manifest
 plugins/claude-dev-skills/
   .claude-plugin/plugin.json             the plugin manifest
-  skills/<name>/SKILL.md                 one self-contained skill each
+  skills/<name>/SKILL.md                 a listed router skill (≤60 lines)
+  skills/<name>/references/<workflow>.md the workflow bodies, read on demand
 ```
 
 ---
@@ -186,7 +192,7 @@ Two skills distill the work of other skill authors into original, self-contained
 `SKILL.md` text is written fresh for this repo — it does not redistribute the source material —
 but the practice it captures is owed to:
 
-- **`process`** — the [Superpowers](https://github.com/obra/superpowers) skill suite by
+- **`coding process`** — the [Superpowers](https://github.com/obra/superpowers) skill suite by
   **Jesse Vincent** (`obra`): brainstorming, TDD, systematic debugging, verification, planning,
   worktrees, and the subagent workflows, plus **Anthropic's** skill-authoring guidance. For the
   full upstream treatment of any topic, see that repo.
@@ -200,7 +206,7 @@ authored one of these and want different or removed attribution, open an issue.
 ## Conventions
 
 - **One canonical skill per job.** No `-v2` or `-fix` variants; consolidate rather than fork.
-- **Self-contained by rule.** A published `SKILL.md` carries everything it needs; it never routes
-  to files that don't ship.
+- **Self-contained by rule.** A published skill carries everything it needs; its router only
+  points to `references/` files that ship.
 - **A skill is a checklist, not a manual.** Keep it scannable; push depth into clearly-named
   sections, not walls of prose.

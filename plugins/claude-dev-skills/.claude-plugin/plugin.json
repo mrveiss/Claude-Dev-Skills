@@ -1,7 +1,7 @@
 {
   "name": "claude-dev-skills",
-  "description": "Project-agnostic development skills for Claude Code — canonical-source discipline, methodical process, domain review lenses, gap and website audits, UI design, clean commits, and end-of-session memory hygiene. Portable across projects; install once, get the whole working discipline.",
-  "version": "1.0.2",
+  "description": "Project-agnostic development skills for Claude Code, packaged as four router meta-skills (coding, review-lenses, ui-design, web-audit) whose detail loads on demand from references/ — canonical-source discipline, methodical process, clean commits, gap audits, memory hygiene, review lenses, UI design and website audits. Portable across projects; install once, get the whole working discipline.",
+  "version": "1.1.0",
   "author": {
     "name": "mrveiss",
     "url": "https://github.com/mrveiss"

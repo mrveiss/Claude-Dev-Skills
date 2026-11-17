@@ -1,9 +1,4 @@
----
-name: gap-audit
-description: After completing a batch fix or implementation, audit adjacent files for the same issue and file GitHub discovery issues for each gap found. Use after any batch implementation, bug fix, or remediation campaign.
-metadata:
-  type: skill
----
+When to use: After completing a batch fix or implementation, audit adjacent files for the same issue and file GitHub discovery issues for each gap found. Use after any batch implementation, bug fix, or remediation campaign.
 
 # Gap Audit
 

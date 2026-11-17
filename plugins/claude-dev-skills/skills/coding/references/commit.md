@@ -1,9 +1,6 @@
----
-name: commit
-description: Standardized commit workflow with pre-flight checks, auto-format, and retry logic for pre-commit hooks
----
+When to use: Standardized commit workflow with pre-flight checks, auto-format, and retry logic for pre-commit hooks
 
-# /commit - Standardized Commit Workflow
+# /claude-dev-skills:coding commit - Standardized Commit Workflow
 
 ## Pre-Flight
 - `git branch --show-current` — wrong branch? STOP and ask user
