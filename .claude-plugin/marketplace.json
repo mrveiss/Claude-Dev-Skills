@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "General-purpose Claude Code skills that encode how to work — exploring a request before building, planning and debugging methodically, reviewing and auditing, designing UI, committing cleanly, and keeping memory tidy.",
-    "version": "1.1.0"
+    "version": "1.1.1"
   },
   "plugins": [
     {
       "name": "claude-dev-skills",
       "source": "./plugins/claude-dev-skills",
       "description": "One installable set of project-agnostic development skills in four router meta-skills (coding, review-lenses, ui-design, web-audit) with detail in references/: canonical-source discipline, methodical process, clean commits, gap audits, memory hygiene, review lenses, UI design and website audits.",
-      "version": "1.1.0"
+      "version": "1.1.1"
     }
   ]
 }

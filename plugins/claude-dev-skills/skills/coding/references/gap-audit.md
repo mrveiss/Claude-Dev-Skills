@@ -15,18 +15,24 @@ Run after completing work to catch similar issues in adjacent files that weren't
 
 2. **State the fix pattern in one sentence** — e.g., "adds response_model=None to router decorators", "adds source_id ownership guard to analytics endpoints", "adds --exclude=.env to rsync calls".
 
-3. **Find candidate files** — glob for files with the same extension and directory as the modified files:
+3. **Sweep repo-wide by behaviour** — search for the sink, call or pattern the fix addresses, not the file extension or the fixed directories; siblings, other services and shared helpers are in scope:
    ```bash
-   find <same-directories> -name "*.py" | grep -v __pycache__ | sort
-   # Compare against already-fixed list; drop those
+   grep -rnE "<sink-or-pattern>" . --include="*.<ext>" | grep -v __pycache__
    ```
+   Record the exact command and its hit count in the report — a zero is "searched, none" only with the command shown. Drop already-fixed files.
+   Fixed defect in a known family? Also run its checklist:
+   - **Parsers** — every parse of untrusted input: size/depth limits, entity or external-reference handling, error path.
+   - **Deserialisation / object construction** — every loader or constructor taking external data: unsafe loaders, type/class chosen by input.
+   - **Archive extract / import / restore** — member-path containment, links, size and count limits, overwrite of existing data.
+   - **Path join / containment** — every join with external input: `..`, absolute segments, symlinks, resolve-then-compare.
+   - **Subprocess argv** — every spawn: shell use, argv vs string, option injection (`--`), env passthrough.
 
 4. **Check each candidate** — for each file NOT in the already-fixed list:
    - Read the file
    - Apply the same fix criteria used in the completed work
    - If the same issue exists → add to gap list with specific line numbers
 
-5. **File a discovery issue per gap** (or one issue with a checklist if gaps are in the same module):
+5. **File ONE issue per defect class** — one root cause, one issue, one fix. Every instance is a separately addressable `file:line` row; a safe sibling is evidence only for itself. First search for an existing class issue (`gh issue list --search "<pattern>" --state all`) and add instances there instead of filing a new one:
    ```bash
    gh issue create \
      --title "Gap: <fix-pattern> needed in <file-or-module>" \
@@ -35,9 +41,10 @@ Run after completing work to catch similar issues in adjacent files that weren't
 
    **Pattern:** <what needs fixing>
    **Found during:** gap audit after <PR/commit reference>
+   **Sweep:** `<search command>` — <hit count> hits
 
-   ### Affected Files
-   - [ ] `path/to/file.py` line <N> — <specific issue>
+   ### Instances
+   - [ ] `path/to/file.py:<N>` — <specific issue>
 
    ### Fix
    Apply the same fix as in <reference PR/commit>.
@@ -55,14 +62,14 @@ Run after completing work to catch similar issues in adjacent files that weren't
    ```
 
 6. **Report** — output a summary:
+   - Sweep command(s) and hit count(s)
    - Total candidates checked
    - Gaps found (with issue numbers filed)
    - Confirmation that no gaps = coverage complete
 
 ## Scope Heuristics
 
-- **Default:** Same directories as modified files
-- **Cross-cutting security fix:** Expand to full codebase (`find . -name "*.py"`)
+- **Default:** repo-wide behaviour sweep (Step 3), never only the fixed directories
 - **API endpoint fix:** Scope to `api/` and `tests/api/` directories
 - **Shared utility fix:** Check all importers (`grep -r "from module import"`)
 
@@ -72,6 +79,6 @@ Run after completing work to catch similar issues in adjacent files that weren't
 
 1. `git diff --name-only HEAD~3..HEAD` → lists `api/analytics_quality.py`, `api/analytics_code.py`, `api/analytics_cfg.py`
 2. Pattern: "missing source_id ownership check before returning data"
-3. Find all `api/analytics_*.py` files → check each for the pattern
+3. Sweep repo-wide for the behaviour (e.g. every route returning analytics data), record command and hit count → check each hit
 4. Found gap in `api/analytics_debt.py` → file issue
 5. Report: "1 gap found, filed as #9234. 4 other analytics files clean."
