@@ -1,7 +1,7 @@
 # Claude Dev Skills
 
-A portable [Claude Code](https://claude.com/claude-code) plugin — a set of four router
-meta-skills (eight workflows) that encode *how to work*: exploring a request before building, planning and
+A portable [Claude Code](https://claude.com/claude-code) plugin — a set of five router
+meta-skills that encode *how to work*: exploring a request before building, planning and
 debugging methodically, reviewing and auditing, designing UI, committing cleanly, and keeping
 memory tidy. Packaged as one marketplace plugin so the whole working discipline moves to a new
 machine in two commands.
@@ -100,9 +100,9 @@ configure before first use.
 
 ---
 
-## The four skills and their workflows
+## The five skills and their workflows
 
-Only the four skills below are listed in a session; each workflow is a row in the skill's router
+Only the five skills below are listed in a session; each workflow is a row in the skill's router
 table (`/claude-dev-skills:coding <workflow>`).
 
 ### Process & discipline
@@ -141,6 +141,11 @@ table (`/claude-dev-skills:coding <workflow>`).
 - **`coding memory-cleanup`** — An end-of-session hygiene ritual for a file-based memory system: keep the
   index an index, ensure every entry is reachable from a topic file, and prune what has gone
   stale or duplicated.
+- **`memory-library`** — Library-structured memory for a topic list too big to read whole: rooms,
+  shelves, single-author books and chapters; a card-first lookup; catalogues by topic, author, date,
+  title, kind and issue; call numbers from a per-project `library/classes.json`; stdlib-only
+  `build`/`catalog` scripts that never touch a fact file; and a hook that blocks a new memory
+  fact without `author:` and `created:`.
 
 ---
 

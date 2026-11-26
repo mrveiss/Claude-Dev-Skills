@@ -1,0 +1,18 @@
+{
+  "description": "memory-library: a new memory fact file must carry author: and created: in its frontmatter",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": ["-I", "${CLAUDE_PLUGIN_ROOT}/skills/memory-library/scripts/check_new_fact.py"],
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

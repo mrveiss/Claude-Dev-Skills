@@ -32,10 +32,15 @@ go to Step 4.
 For each fact worth keeping:
 
 1. Write it to its own file with `name` / `description` / `metadata.type`
-   frontmatter (`user` | `feedback` | `project` | `reference`).
+   frontmatter (`user` | `feedback` | `project` | `reference`). Authorship,
+   dates and shelving rules live in `/claude-dev-skills:memory-library write`; do not restate them here.
 2. Add a one-line pointer to the matching `topics/*.md`:
    `- [title](../file.md) — hook`
 3. Only touch `MEMORY.md` if the rule is safety-critical (see Step 5).
+
+A topic list too big to read whole is shelved, and lookups go card-first, per
+`/claude-dev-skills:memory-library` (`shelve`, `lookup`); this ritual does not
+duplicate that structure.
 
 ## Step 3: Verify Open Work
 
