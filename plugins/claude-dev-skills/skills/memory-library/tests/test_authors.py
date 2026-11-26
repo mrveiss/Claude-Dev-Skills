@@ -87,6 +87,17 @@ class WithLedger(unittest.TestCase):
         self.assertIn('Authors resolved: 2 (2 entries); unrecorded: ', text)
         self.assertEqual(sha_tree(self.mem, only_root=True), self.before)
 
+    def test_one_pass_authors_then_build_places_the_fact(self):
+        tmp, home, mem, bin_dir = with_facts()
+        try:
+            self.assertEqual(run('authors.py', mem, tmp, home, bin_dir).returncode, 0)
+            self.assertEqual(run('build.py', mem, tmp, home, bin_dir).returncode, 0)
+            book = os.path.join(mem, 'library', 'reference', 'ci-merge', 'autobot-ai-m2')
+            self.assertTrue(any('a_ledger' in open(os.path.join(book, f), encoding='utf-8').read()
+                                for f in os.listdir(book)))
+        finally:
+            shutil.rmtree(tmp)
+
     def test_unchanged_authors_json_keeps_its_mtime(self):
         path = os.path.join(self.mem, 'library', 'authors.json')
         m = os.stat(path).st_mtime_ns
