@@ -15,6 +15,7 @@ plugins/*/skills/*/references/*
 !plugins/claude-dev-skills/skills/review-lenses/references/review-lenses.md
 !plugins/claude-dev-skills/skills/ui-design/references/ui-design.md
 !plugins/claude-dev-skills/skills/web-audit/references/web-audit.md
+!plugins/claude-dev-skills/skills/memory-library/references/*
 
 __pycache__/
 *.pyc
