@@ -27,6 +27,17 @@ room -> shelf -> author -> chapter -> date
 
 `ROOM.SHELF/author/CHAPTER/date`, for example `REF.CI/owner/TRN/2026-11-12`.
 
-- Date source order: `created:` in the fact, then a date written in the entry, then the file time.
-- File-time dates are written `~YYYY-MM-DD` (approximate); a day shared by 20 or more file-dated entries is `unknown`.
+- Date source order, with the marker each carries (a date never claims more certainty than its source):
+
+| Marker | Quality | Source |
+|---|---|---|
+| none, `2026-10-03` | exact | `created:` in the fact, else a date written in the entry |
+| `≈` | near-exact | start of the fact's `originSessionId` session (UTC day) |
+| `≥` | not-before | newest cited issue/PR `#N`; the line adds `≥2026-09-14 (#19451)` |
+| `≥` | range | not-before plus `modified:` as not-after; the line adds `≥2026-09-14 ≤2026-10-01 (#19451)` |
+| `~` | approximate | file time; a day shared by 20 or more file-dated entries is `unknown` |
+| `unknown` | none | no usable source |
+
+- Sources 3-4 come from `library/dates.json` (written by `dates.py`, see `shelving.md`); without it the catalogue uses only the first and last rows. `github_repo` in `classes.json` names the repo for `#N` lookups.
+- by-date groups by the month of the best date; a `≥` entry sits in its not-before month and stays marked.
 - Sorting call numbers as text gives facet order (that is why the order is fixed).

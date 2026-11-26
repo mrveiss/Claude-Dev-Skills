@@ -23,11 +23,6 @@ def entries(mem, shelf):
         return [ln.rstrip('\n') for ln in fh if ln.startswith('- [')]
 
 
-def fact_name(line):
-    m = _lib.LINK_RE.search(line)
-    return os.path.basename(m.group(1)) if m else None
-
-
 def pick_author(mem, shelf, line, fact):
     """Frontmatter author wins; else the first author whose match rules hit; else default."""
     if fact:
@@ -53,7 +48,7 @@ def classify(mem, shelf):
     books = collections.defaultdict(lambda: collections.defaultdict(list))
     missing = []
     for line in entries(mem, shelf):
-        fact = fact_name(line)
+        fact = _lib.fact_name(line)
         if fact and not os.path.exists(os.path.join(mem, fact)):
             missing.append(fact)
         ch = pick_chapter(shelf, line)

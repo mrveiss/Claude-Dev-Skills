@@ -153,7 +153,7 @@ class BuildCatalogTests(unittest.TestCase):
                     entries = [ln for ln in fh if ln.startswith('- ')]
                 self.assertTrue(entries)
                 for ln in entries:
-                    self.assertRegex(ln, r'^- `[A-Z]+\.[A-Z]+/[^/`]+/[A-Z]+/(~?\d{4}-\d{2}-\d{2}|unknown)` · ')
+                    self.assertRegex(ln, r'^- `[A-Z]+\.[A-Z]+/[^/`]+/[A-Z]+/([~≈≥]?\d{4}-\d{2}-\d{2}|unknown)` · ')
 
     def test_kind_and_issue_groups(self):
         self.assertTrue(os.path.isfile(self.read_path('catalog', 'by-kind', 'gotcha.md')))

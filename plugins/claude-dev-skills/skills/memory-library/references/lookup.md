@@ -17,5 +17,5 @@ When to use: answering a question from memory, or finding who wrote what or when
 | What do we know about issue or PR #N | `catalog/by-issue.md` (grouped per thousand) |
 
 - Every catalogue line starts with its call number `ROOM.SHELF/author/CHAPTER/date`; see `classification.md`.
-- A date shown `~2026-09-03` came from a file time and is approximate; `unknown` means a bulk-copy file day (threshold in `classification.md`), so treat it as undated.
+- Read a date by its marker (table in `classification.md`): `≥` is only a lower bound, `≈` a session start, `~` a file time; `unknown` is undated.
 - A catalogue that looks stale: run `shelving.md` step 3, never edit it by hand.
