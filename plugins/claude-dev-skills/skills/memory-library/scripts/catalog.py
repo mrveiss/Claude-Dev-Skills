@@ -34,12 +34,17 @@ def chapter_code(shelf_cfg, key):
 
 
 def load_dates(mem, cfg):
-    """dates.json when present, else the local-only resolution (created, text, file, bulk)."""
+    """dates.json when present; a fact it lacks (newer than the last dates.py run) gets the local resolution."""
+    local = dates.resolve(mem, cfg)  # created, text, file, bulk
     path = os.path.join(mem, 'library', 'dates.json')
-    if os.path.isfile(path):
-        with open(path, encoding='utf-8') as fh:
-            return json.load(fh)
-    return dates.resolve(mem, cfg)
+    if not os.path.isfile(path):
+        return local
+    with open(path, encoding='utf-8') as fh:
+        table = json.load(fh)
+    missing = [f for f in local if f not in table]
+    if missing:
+        print(f'catalog: {len(missing)} facts missing from dates.json (local dates used); re-run dates.py')
+    return {**local, **table}
 
 
 def entry_date(table, line, fact):

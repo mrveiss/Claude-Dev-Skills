@@ -85,9 +85,9 @@ def fake_gh(tmp, present=True):
     return bin_dir
 
 
-def run(script, mem, tmp, home, bin_dir):
+def run(script, mem, tmp, home, bin_dir, **extra_env):
     env = {'PATH': bin_dir + os.pathsep + '/nonexistent', 'MEMORY_LIBRARY_HOME': home,
-           'GH_LOG': os.path.join(tmp, 'gh.log')}
+           'GH_LOG': os.path.join(tmp, 'gh.log'), **extra_env}
     return subprocess.run([sys.executable, '-I', os.path.join(SCRIPTS, script), mem, *(['CI'] if script == 'build.py' else [])],
                           capture_output=True, text=True, env=env)
 
@@ -131,6 +131,46 @@ class WithGh(unittest.TestCase):
         try:
             run('dates.py', mem, tmp, home, fake_gh(tmp))
             self.assertEqual(dates(mem)['f_tz.md']['date'], '2026-08-05')
+        finally:
+            shutil.rmtree(tmp)
+
+    def test_no_timezone_key_uses_the_machine_local_zone(self):
+        tmp, home, mem = make(tz=None)
+        try:
+            run('dates.py', mem, tmp, home, fake_gh(tmp), TZ='Asia/Tokyo')
+            self.assertEqual(dates(mem)['f_tz.md']['date'], '2026-08-06')  # 23:30 UTC is 08:30 next day in Tokyo
+            run('dates.py', mem, tmp, home, os.path.join(tmp, 'bin'), TZ='America/Los_Angeles')
+            self.assertEqual(dates(mem)['f_tz.md']['date'], '2026-08-05')  # 16:30 the same day in Los Angeles
+        finally:
+            shutil.rmtree(tmp)
+
+    def test_corrupt_ref_cache_is_ignored_and_rebuilt(self):
+        tmp, home, mem = make()
+        try:
+            write(os.path.join(mem, 'library', 'ref-dates.json'), '{"owner/name": {"101": ')
+            out = run('dates.py', mem, tmp, home, fake_gh(tmp))
+            self.assertEqual(out.returncode, 0, out.stderr)
+            self.assertEqual(sum('ref-dates.json is unreadable' in ln for ln in out.stdout.splitlines()), 1)
+            self.assertEqual(dates(mem)['f_before.md']['date'], '2026-09-20')
+            with open(os.path.join(mem, 'library', 'ref-dates.json'), encoding='utf-8') as fh:
+                self.assertEqual(sorted(json.load(fh)['owner/name']), ['101', '202'])
+        finally:
+            shutil.rmtree(tmp)
+
+    def test_fact_missing_from_dates_json_gets_its_local_date(self):
+        tmp, home, mem = make()
+        try:
+            gh = fake_gh(tmp)
+            run('dates.py', mem, tmp, home, gh)
+            run('build.py', mem, tmp, home, gh)
+            write(os.path.join(mem, 'newer.md'), '---\nname: n\nmetadata:\n  type: feedback\n  created: 2026-11-20\n---\n')
+            with open(os.path.join(mem, 'topics', 'ci-merge.md'), 'a', encoding='utf-8') as fh:
+                fh.write('- [Newer](newer.md) - ledger rule\n')
+            run('build.py', mem, tmp, home, gh)
+            c = run('catalog.py', mem, tmp, home, gh)
+            self.assertIn('1 facts missing from dates.json', c.stdout)
+            with open(os.path.join(mem, 'library', 'catalog', 'by-date', '2026-11.md'), encoding='utf-8') as fh:
+                self.assertIn('/2026-11-20` · ', next(x for x in fh if 'newer.md' in x))
         finally:
             shutil.rmtree(tmp)
 

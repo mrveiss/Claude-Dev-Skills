@@ -79,14 +79,24 @@ def session_date(sid, tz):
 class RefDates:
     """Issue/PR creation dates via `gh api`, cached under library/ref-dates.json (successes only)."""
 
-    def __init__(self, mem, repo):
+    def __init__(self, mem, repo, notes):
         self.mem, self.repo = mem, repo
         self.path = os.path.join(mem, 'library', 'ref-dates.json')
         self.cache = {}
         if os.path.isfile(self.path):
-            with open(self.path, encoding='utf-8') as fh:
-                self.cache = json.load(fh)
+            self.cache = self.load(notes)
         self.failed = 0
+
+    def load(self, notes):
+        try:
+            with open(self.path, encoding='utf-8') as fh:
+                cache = json.load(fh)
+        except (ValueError, OSError):
+            cache = None
+        if isinstance(cache, dict):
+            return cache
+        notes.append('ref-dates.json is unreadable: ignored, will be rebuilt')
+        return {}
 
     def get(self, number):
         known = self.cache.setdefault(self.repo, {})
@@ -118,7 +128,7 @@ def ref_source(mem, cfg, notes):
     elif not shutil.which('gh'):
         notes.append('issue/PR source skipped: gh not found on PATH')
     else:
-        return RefDates(mem, cfg['github_repo'])
+        return RefDates(mem, cfg['github_repo'], notes)
     return None
 
 
