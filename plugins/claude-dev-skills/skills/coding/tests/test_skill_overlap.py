@@ -64,6 +64,11 @@ class SkillOverlapTest(unittest.TestCase):
             run(t)
             self.assertEqual(before, (d / 'SKILL.md').read_bytes())
 
+    def test_similarity_bounds_and_empty_inputs(self):
+        self.assertEqual(skill_overlap.similarity(' ', '', 0.85), 0.0)
+        self.assertEqual(skill_overlap.similarity('a b c', 'x y z w v u t s r q', 0.85), 0.0)
+        self.assertEqual(skill_overlap.similarity('same words here', 'same words here', 0.85), 1.0)
+
 
 if __name__ == '__main__':
     unittest.main()
