@@ -35,11 +35,12 @@ room -> shelf -> author -> chapter -> date
 | `≈` | near-exact | start of the fact's `originSessionId` session |
 | `≥` | not-before | newest cited issue/PR `#N`; the line adds `≥2026-09-14 (#19451)` |
 | `≥` | range | not-before plus `modified:` as not-after; the line adds `≥2026-09-14 ≤2026-10-01 (#19451)` |
+| `≤` | not-after | `modified:` predates the newest cited issue: the citation came in a later edit, so the issue bounds only that edit and the fact is dated no newer than `modified:`; the line adds `≤2026-08-12 (cites #18406 from 2026-10-12: added in a later edit)` |
 | `~` | approximate | file time; a day shared by 20 or more file-dated entries is `unknown` |
 | `unknown` | none | no usable source |
 
 - Sources 3-4 come from `library/dates.json` (written by `dates.py`, see `shelving.md`); without it the catalogue uses only the first and last rows. `github_repo` in `classes.json` names the repo for `#N` lookups.
-- A `≥` note that ends `⚠ modified B is earlier` means `modified:` predates the cited issue: the facts contradict, so check them; `dates.py` counts these.
+- `modified:` is read in the configured zone: an ISO timestamp is converted before taking its day, so an evening UTC edit is not a day early. `dates.py` counts the not-after cases.
 - Days are computed in `timezone` from `classes.json` (IANA name), else the machine's local zone.
-- by-date groups by the month of the best date; a `≥` entry sits in its not-before month and stays marked.
+- by-date groups by the month of the best date; a `≥` entry sits in its not-before month and stays marked; a `≤` entry sits in the month of its `modified:`.
 - Sorting call numbers as text gives facet order (that is why the order is fixed).

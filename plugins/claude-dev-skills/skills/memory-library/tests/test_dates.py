@@ -174,11 +174,21 @@ class WithGh(unittest.TestCase):
         finally:
             shutil.rmtree(tmp)
 
-    def test_modified_earlier_than_cited_issue_is_shown_and_counted(self):
+    def test_citation_added_after_modified_dates_the_fact_not_after_modified(self):
         c = self.d['f_clash.md']
-        self.assertEqual((c['date'], c['quality'], c['conflict']), ('2026-09-20', 'not-before', '2026-09-01'))
-        self.assertNotIn('not_after', c)
-        self.assertIn('contradictions (modified earlier than a cited issue) 1', self.out.stdout)
+        self.assertEqual((c['date'], c['quality'], c['cited_later'], c['ref']), ('2026-09-01', 'not-after', '2026-09-20', 202))
+        self.assertIn('citations added after modified: (dated not-after modified:) 1', self.out.stdout)
+
+    def test_modified_iso_stamp_is_read_in_the_configured_zone(self):
+        sys.path.insert(0, SCRIPTS)
+        import dates
+        riga = __import__('zoneinfo').ZoneInfo('Europe/Riga')
+        self.assertEqual(dates.modified_day('2026-08-17T22:28:25.515Z', riga), '2026-08-18')
+        self.assertEqual(dates.modified_day('2026-08-17T20:00:00Z', riga), '2026-08-17')
+        self.assertEqual(dates.modified_day('2026-08-17', riga), '2026-08-17')
+        self.assertEqual(dates.modified_day('2026-08-17T22:28:25.5Z', riga), '2026-08-18')
+        self.assertIsNone(dates.modified_day('2026-13-45T99:00Z', riga))
+        self.assertIsNone(dates.modified_day('2026-13-45', riga))
 
     def test_never_edits_a_fact_file(self):
         self.assertEqual(sha_tree(self.mem, only_root=True), self.before)
@@ -212,7 +222,7 @@ class WithGh(unittest.TestCase):
         self.assertIn('/≥2026-09-14` · ≥2026-09-14 ≤2026-12-01 (#101) · ', line('2026-09.md', 'f_range'))
         self.assertIn('/~2026-06-09` · ', line('2026-06.md', 'f_file'))
         self.assertIn('/unknown` · ', line('unknown.md', 'f_missing'))
-        self.assertIn('/≥2026-09-20` · ≥2026-09-20 (#202) ⚠ modified 2026-09-01 is earlier · ', line('2026-09.md', 'f_clash'))
+        self.assertIn('/≤2026-09-01` · ≤2026-09-01 (cites #202 from 2026-09-20: added in a later edit) · ', line('2026-09.md', 'f_clash'))
         self.assertNotIn('f_before', text.get('2026-10.md', ''))  # a not-before is placed in its own month only
         self.assertEqual(sha_tree(self.mem, only_root=True), self.before)
 
