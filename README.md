@@ -1,6 +1,6 @@
 # Claude Dev Skills
 
-A portable [Claude Code](https://claude.com/claude-code) plugin — a set of five router
+A portable [Claude Code](https://claude.com/claude-code) plugin — a set of six router
 skills that encode *how to work*: exploring a request before building, planning and
 debugging methodically, reviewing and auditing, designing UI, committing cleanly, and keeping
 memory tidy. Packaged as one marketplace plugin so the whole working discipline moves to a new
@@ -100,9 +100,9 @@ configure before first use.
 
 ---
 
-## The five skills and their workflows
+## The six skills and their workflows
 
-Only the five skills below are listed in a session; each workflow is a row in the skill's router
+Only the six skills below are listed in a session; each workflow is a row in the skill's router
 table (`/claude-dev-skills:coding <workflow>`).
 
 ### Process & discipline
@@ -147,6 +147,11 @@ table (`/claude-dev-skills:coding <workflow>`).
   title, kind and issue; call numbers from a per-project `library/classes.json`; stdlib-only
   `build`/`catalog` scripts that never touch a fact file; and a hook that blocks a new memory
   fact without `author:` and `created:`.
+- **`code-library`** — A generated, read-only map of a codebase in the same library shape: rooms
+  (services), domain cards (entry points, concepts, tests, issues), chapters as `file:symbol`,
+  catalogues by concept, route, env var, key and issue, and a fork/duplicate report with one entry
+  per class and a proposed canonical home. Parses text only (never runs the target), stdlib only,
+  output outside the repo and keyed to a commit.
 
 ---
 
