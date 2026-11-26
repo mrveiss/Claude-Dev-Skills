@@ -8,6 +8,7 @@ session start (near-exact) -> cited issue/PR #N (not-before, with modified: as n
 -> file time (approximate; a bulk-copy day is unknown) -> unknown. Output is
 {fact: {date, source, quality, ...}}. Never edits a fact file. Issue/PR dates come from
 `gh api` for the `github_repo` in classes.json, cached in library/ref-dates.json.
+Day boundaries use `timezone` (IANA name) from classes.json, else the machine's local zone.
 Env MEMORY_LIBRARY_HOME replaces the home directory (session transcripts, history.jsonl).
 """
 import collections
@@ -40,9 +41,9 @@ def iso_day(stamp):
     return when.astimezone(datetime.timezone.utc)
 
 
-def earliest(stamps):
+def earliest(stamps, tz):
     days = [d for d in stamps if d]
-    return min(days).date().isoformat() if days else None
+    return _lib.day_of(min(days), tz) if days else None
 
 
 def transcript_stamps(sid):
@@ -70,9 +71,9 @@ def history_stamps(sid):
                 yield datetime.datetime.fromtimestamp(rec['timestamp'] / 1000, datetime.timezone.utc)
 
 
-def session_date(sid):
-    """Start day (UTC) of a session: transcript first, else history.jsonl; None when neither knows it."""
-    return earliest(transcript_stamps(sid)) or earliest(history_stamps(sid))
+def session_date(sid, tz):
+    """Start day (in tz) of a session: transcript first, else history.jsonl; None when neither knows it."""
+    return earliest(transcript_stamps(sid), tz) or earliest(history_stamps(sid), tz)
 
 
 class RefDates:
@@ -131,35 +132,37 @@ def cited(mem, fact, lines):
     return sorted({int(n) for n in _lib.REF_RE.findall(text)})
 
 
-def bounded(refs, numbers, fm):
+def bounded(refs, numbers, fm, tz):
     """not-before = newest cited issue/PR; modified: adds a not-after (a range) only if consistent."""
     dated = [(iso_day(refs.get(n)), n) for n in numbers]
     dated = [(d, n) for d, n in dated if d]
     if not dated:
         return None
     newest, ref = max(dated)
-    date = newest.date().isoformat()
+    date = _lib.day_of(newest, tz)
     mod = _lib.DATE_RE.search(fm.get('modified', ''))
     after = '-'.join(mod.groups()) if mod else None
     if after and after >= date:
         return _lib.found(date, 'issue', 'range', not_after=after, ref=ref)
+    if after:  # modified earlier than a cited issue: a contradiction, shown and counted, never hidden
+        return _lib.found(date, 'issue', 'not-before', ref=ref, conflict=after)
     return _lib.found(date, 'issue', 'not-before', ref=ref)
 
 
 def resolve(mem, cfg, refs=None, sessions=False):
     """{fact: info}. refs (a RefDates) and sessions=True enable the two non-local sources."""
-    table, files = {}, {}
+    table, files, tz = {}, {}, _lib.zone(cfg)
     for fact, lines in sorted((f, l) for f, l in _lib.source_lines(mem, cfg).items() if f):
         fm = _lib.frontmatter(os.path.join(mem, fact))
         info = _lib.exact_date(fm, lines)
         sid = fm.get('originSessionId')
         if not info and sessions and sid:
-            day = session_date(sid)
+            day = session_date(sid, tz)
             info = _lib.found(day, 'session', 'near-exact') if day else None
         if not info and refs:
-            info = bounded(refs, cited(mem, fact, lines), fm)
+            info = bounded(refs, cited(mem, fact, lines), fm, tz)
         if not info:
-            day = _lib.file_date(mem, fact)
+            day = _lib.file_date(mem, fact, tz)
             info = _lib.found(day, 'file', 'approximate') if day else _lib.found('unknown', 'none', 'unknown')
             files[fact] = day
         table[fact] = info
@@ -192,7 +195,9 @@ def main(argv):
     for note in notes:
         print('dates: ' + note)
     counts = collections.Counter(i['quality'] for i in table.values())
-    print(f'dates: {len(table)} facts; ' + ', '.join(f'{q} {n}' for q, n in sorted(counts.items())))
+    clashes = sum(1 for i in table.values() if i.get('conflict'))
+    print(f'dates: {len(table)} facts; ' + ', '.join(f'{q} {n}' for q, n in sorted(counts.items()))
+          + f'; contradictions (modified earlier than a cited issue) {clashes}')
 
 
 if __name__ == '__main__':

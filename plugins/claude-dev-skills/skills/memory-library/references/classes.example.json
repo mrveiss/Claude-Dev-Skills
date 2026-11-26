@@ -2,6 +2,8 @@
  "_comment": "Class schedule. Codes are the readable call-number parts: ROOM.SHELF/author/CHAPTER/date. Add a shelf = add an entry under shelves; chapter regexes are matched in order, first hit wins.",
  "_github_repo": "owner/name of the GitHub repo that #N issue and PR numbers in facts refer to; dates.py reads their creation dates with `gh api`. Omit it and that date source is skipped.",
  "github_repo": "owner/name",
+ "_timezone": "Optional IANA zone name; the day a session, issue or file time falls on is computed in it. Omit it to use the machine's local zone.",
+ "timezone": "Europe/Riga",
  "rooms": {
   "REF": {
    "dir": "reference",

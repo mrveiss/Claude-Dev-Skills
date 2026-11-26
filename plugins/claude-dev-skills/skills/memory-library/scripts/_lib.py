@@ -9,6 +9,7 @@ import json
 import os
 import re
 import sys
+import zoneinfo
 
 BULK_THRESHOLD = 20  # file-dated entries on one day at/above this are a bulk copy
 DATE_RE = re.compile(r'(20\d\d)[-_](\d\d)[-_](\d\d)')
@@ -155,12 +156,29 @@ def exact_date(fm, lines):
     return None
 
 
-def file_date(mem, fact):
+def zone(cfg):
+    """tzinfo for day boundaries: classes.json `timezone` (IANA name), else the machine's local zone (None)."""
+    name = cfg.get('timezone')
+    if not name:
+        return None
+    try:
+        return zoneinfo.ZoneInfo(name)
+    except (zoneinfo.ZoneInfoNotFoundError, ValueError):
+        die(f'unknown timezone {name!r} in classes.json (use an IANA name such as Europe/Riga)')
+
+
+def day_of(when, tz):
+    """ISO day of an aware datetime in tz; tz None means the machine's local zone."""
+    return when.astimezone(tz).date().isoformat()
+
+
+def file_date(mem, fact, tz=None):
     try:
         st = os.stat(os.path.join(mem, fact))
     except (OSError, TypeError):
         return None
-    return datetime.date.fromtimestamp(getattr(st, 'st_birthtime', st.st_mtime)).isoformat()
+    stamp = getattr(st, 'st_birthtime', st.st_mtime)
+    return day_of(datetime.datetime.fromtimestamp(stamp, datetime.timezone.utc), tz)
 
 
 def date_note(info):
@@ -169,4 +187,5 @@ def date_note(info):
         return ''
     after = f' ≤{info["not_after"]}' if info.get('not_after') else ''
     ref = f' (#{info["ref"]})' if info.get('ref') else ''
-    return f'≥{info["date"]}{after}{ref}'
+    clash = f' ⚠ modified {info["conflict"]} is earlier' if info.get('conflict') else ''
+    return f'≥{info["date"]}{after}{ref}{clash}'

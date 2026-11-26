@@ -1,4 +1,5 @@
 """Tests for dates.py and the quality-marked dates in catalog.py (fake gh on PATH; the real gh is never called)."""
+import calendar
 import json
 import os
 import shutil
@@ -6,14 +7,13 @@ import stat
 import subprocess
 import sys
 import tempfile
-import time
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from test_memory_library import SCRIPTS, EXAMPLE, sha_tree  # noqa: E402
 
-FILE_DAY = time.mktime((2026, 6, 9, 12, 0, 0, 0, 0, -1))
+FILE_DAY = calendar.timegm((2026, 6, 9, 12, 0, 0))  # noon UTC: the same day in any zone the tests use
 FAKE_GH = '''#!/bin/sh
 echo "$2" >> "$GH_LOG"
 case "$2" in
@@ -29,6 +29,8 @@ FACTS = {  # name -> (frontmatter extra lines, entry text)
     'f_hist.md': ('originSessionId: sess-hist\n', 'ledger note #101'),
     'f_before.md': ('', 'ledger rule, see #101 and #202 and #999'),
     'f_range.md': ('  modified: 2026-12-01\n', 'ledger rule, see #101'),
+    'f_tz.md': ('originSessionId: sess-tz\n', 'ledger note'),
+    'f_clash.md': ('  modified: 2026-09-01\n', 'ledger rule, see #202'),
     'f_file.md': ('', 'ledger rule without any date'),
 }
 
@@ -39,7 +41,7 @@ def write(path, text):
         fh.write(text)
 
 
-def make(drop_repo=False):
+def make(drop_repo=False, tz='Europe/Riga'):
     tmp = tempfile.mkdtemp()
     home = os.path.join(tmp, 'home')
     mem = os.path.join(tmp, 'mem')
@@ -48,6 +50,10 @@ def make(drop_repo=False):
     cfg = json.load(open(EXAMPLE, encoding='utf-8'))
     if drop_repo:
         cfg.pop('github_repo')
+    if tz:
+        cfg['timezone'] = tz
+    else:
+        cfg.pop('timezone', None)
     write(os.path.join(lib, 'classes.json'), json.dumps(cfg))
     lines = []
     for name, (extra, text) in FACTS.items():
@@ -60,6 +66,8 @@ def make(drop_repo=False):
     write(os.path.join(mem, 'topics', 'ci-merge.md'), '# CI\n\n' + '\n'.join(lines) + '\n')
     write(os.path.join(home, '.claude', 'projects', 'p', 'sess-trans.jsonl'),
           '{"type":"x"}\n{"timestamp":"2026-08-02T23:30:00.000Z"}\n{"timestamp":"2026-08-01T10:00:00.000Z"}\n')
+    write(os.path.join(home, '.claude', 'projects', 'p', 'sess-tz.jsonl'),
+          '{"timestamp":"2026-08-05T23:30:00.000Z"}\n')
     write(os.path.join(home, '.claude', 'history.jsonl'),
           '{"timestamp":1788000000000,"sessionId":"sess-hist"}\n'
           '{"timestamp":1787000000000,"sessionId":"sess-hist"}\n'
@@ -117,6 +125,21 @@ class WithGh(unittest.TestCase):
         self.assertEqual((d['f_file.md']['date'], d['f_file.md']['quality']), ('2026-06-09', 'approximate'))
         self.assertEqual(d['f_missing.md'], {'date': 'unknown', 'source': 'none', 'quality': 'unknown'})
 
+    def test_session_day_is_in_the_configured_zone(self):
+        self.assertEqual(self.d['f_tz.md']['date'], '2026-08-06')  # 23:30 UTC is 02:30 next day in Riga
+        tmp, home, mem = make(tz='UTC')
+        try:
+            run('dates.py', mem, tmp, home, fake_gh(tmp))
+            self.assertEqual(dates(mem)['f_tz.md']['date'], '2026-08-05')
+        finally:
+            shutil.rmtree(tmp)
+
+    def test_modified_earlier_than_cited_issue_is_shown_and_counted(self):
+        c = self.d['f_clash.md']
+        self.assertEqual((c['date'], c['quality'], c['conflict']), ('2026-09-20', 'not-before', '2026-09-01'))
+        self.assertNotIn('not_after', c)
+        self.assertIn('contradictions (modified earlier than a cited issue) 1', self.out.stdout)
+
     def test_never_edits_a_fact_file(self):
         self.assertEqual(sha_tree(self.mem, only_root=True), self.before)
 
@@ -149,6 +172,7 @@ class WithGh(unittest.TestCase):
         self.assertIn('/≥2026-09-14` · ≥2026-09-14 ≤2026-12-01 (#101) · ', line('2026-09.md', 'f_range'))
         self.assertIn('/~2026-06-09` · ', line('2026-06.md', 'f_file'))
         self.assertIn('/unknown` · ', line('unknown.md', 'f_missing'))
+        self.assertIn('/≥2026-09-20` · ≥2026-09-20 (#202) ⚠ modified 2026-09-01 is earlier · ', line('2026-09.md', 'f_clash'))
         self.assertNotIn('f_before', text.get('2026-10.md', ''))  # a not-before is placed in its own month only
         self.assertEqual(sha_tree(self.mem, only_root=True), self.before)
 
@@ -181,7 +205,7 @@ class WithoutGh(unittest.TestCase):
             run('build.py', mem, tmp, home, fake_gh(tmp))
             self.assertEqual(run('catalog.py', mem, tmp, home, os.path.join(tmp, 'bin')).returncode, 0)
             with open(os.path.join(mem, 'library', 'catalog', 'by-date', '2026-06.md'), encoding='utf-8') as fh:
-                self.assertEqual(fh.read().count('/~2026-06-09`'), 5)  # file time, nothing upgraded
+                self.assertEqual(fh.read().count('/~2026-06-09`'), 7)  # file time, nothing upgraded
         finally:
             shutil.rmtree(tmp)
 
