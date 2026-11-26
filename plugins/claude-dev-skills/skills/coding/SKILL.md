@@ -1,6 +1,6 @@
 ---
 name: coding
-description: Discipline for ANY code change — frontend, backend, infra, migrations, or docs that describe code — and its surrounding workflow: canonical-source rules (never create a helper, wrapper, framework, endpoint, config, schema bootstrap or "v2" of what already exists; which source wins when frontend/backend or plan/doc and code disagree or two implementations of one concept exist), process before coding (explore, plan, debug methodically, verify before claiming done, parallel agents, finishing a branch), clean commits with pre-commit retry, gap audits after a batch fix, and end-of-session memory cleanup. Use whenever writing, modifying, reviewing or planning code; at the start of any non-trivial task, when a bug resists the obvious fix, when about to claim something works, when a plan needs writing, when committing, after a batch fix, and at the end of every session; not for the domain work itself.
+description: Discipline for ANY code change — frontend, backend, infra, migrations, or docs that describe code — and its surrounding workflow: canonical-source rules (never create a helper, wrapper, framework, endpoint, config, schema bootstrap or "v2" of what already exists; which source wins when frontend/backend or plan/doc and code disagree or two implementations of one concept exist), process before coding (explore, plan, debug methodically, verify before claiming done, parallel agents, finishing a branch), clean commits with pre-commit retry, gap audits after a batch fix, end-of-session memory cleanup, and skill structure (one job per skill, one home per subject, router skill vs meta-skill, overlap check). Use whenever writing, modifying, reviewing or planning code; at the start of any non-trivial task, when a bug resists the obvious fix, when about to claim something works, when a plan needs writing, when committing, after a batch fix, and at the end of every session; not for the domain work itself.
 ---
 
 # Coding
@@ -14,5 +14,6 @@ Invoke as `/claude-dev-skills:coding <workflow> [args]`; first argument selects 
 | `commit` | Committing: pre-flight checks, auto-format, message shape, pre-commit hook retry | `references/commit.md` |
 | `gap-audit` | After a batch fix, implementation or remediation: sweep adjacent files for the same defect and file an issue per gap | `references/gap-audit.md` |
 | `memory-cleanup` | End of every session: keep MEMORY.md an index and every memory reachable from a topic file | `references/memory-cleanup.md` |
+| `skill-structure` | Writing, splitting, merging or reviewing a skill; two skills overlap; deciding if a meta-skill is needed (one job per skill, one home per subject, router skill vs meta-skill) | `references/skill-structure.md` |
 
 Several rows can apply to one task (typically `canonical-coding` while coding, then `commit`); read each selected reference before acting.

@@ -11,6 +11,10 @@ plugins/*/skills/*/references/*
 !plugins/claude-dev-skills/skills/coding/references/commit.md
 !plugins/claude-dev-skills/skills/coding/references/gap-audit.md
 !plugins/claude-dev-skills/skills/coding/references/memory-cleanup.md
+!plugins/claude-dev-skills/skills/coding/references/skill-structure.md
 !plugins/claude-dev-skills/skills/review-lenses/references/review-lenses.md
 !plugins/claude-dev-skills/skills/ui-design/references/ui-design.md
 !plugins/claude-dev-skills/skills/web-audit/references/web-audit.md
+
+__pycache__/
+*.pyc
