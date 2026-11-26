@@ -13,5 +13,6 @@ Scripts live in `scripts/` (Python standard library only). `<skill>` is this ski
 5. Point the topic list's reader at the shelf card (one line in `topics/<topic>.md` or the library README).
 
 - Build and catalog write only under `<mem>/library/` (they refuse any other path), so facts and topic lists stay byte-identical.
-- Run catalog after every build and after every new fact, never hand-edit its output.
+- **Run the full build (steps 2-3) after a new fact and after editing `classes.json`.** Unchanged generated files are not rewritten, so a new fact changes only its chapter, the shelf card and the catalogue files listing it, and every other file keeps its content and mtime.
+- Never hand-edit generated output.
 - Tests: `python3 -m unittest discover -s <skill>/tests`.

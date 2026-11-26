@@ -39,7 +39,11 @@ def sha_tree(root, only_root=False):
     return out
 
 
-def make_fixture(n_bulk=22):
+NEW_FACT = 'feedback_new_lock.md'
+NEW_LINE = '- [New lock rule](feedback_new_lock.md) - ledger lock rule, see #4321'
+
+
+def make_fixture(n_bulk=22, new_fact=False):
     tmp = tempfile.mkdtemp()
     mem = os.path.join(tmp, '.claude', 'projects', 'demo', 'memory')
     os.makedirs(os.path.join(mem, 'topics'))
@@ -64,9 +68,16 @@ def make_fixture(n_bulk=22):
     lines.append('- [Written ledger note](note_written.md) - ledger entry')
     fact('feedback_old.md', 'x', OTHER_DAY)
     lines.append('- [Old rule](feedback_old.md) - SUPERSEDED train rule 2026-09-01')
+    if new_fact:
+        fact(NEW_FACT, '---\nname: l\nmetadata:\n  type: feedback\n  created: 2026-11-20\n---\n', OTHER_DAY)
+        lines.append(NEW_LINE)
+    write_source(mem, lines)
+    return tmp, mem
+
+
+def write_source(mem, lines):
     with open(os.path.join(mem, 'topics', 'ci-merge.md'), 'w', encoding='utf-8') as fh:
         fh.write('# CI\n\n' + '\n'.join(lines) + '\n')
-    return tmp, mem
 
 
 class BuildCatalogTests(unittest.TestCase):
@@ -152,6 +163,71 @@ class BuildCatalogTests(unittest.TestCase):
     def test_links_resolve_to_fact_files(self):
         text = self.read('catalog', 'by-title', 'T.md')
         self.assertIn('](../../../gotcha_train_0.md)', text)
+
+
+def mtimes(root):
+    return {os.path.relpath(os.path.join(b, f), root): os.stat(os.path.join(b, f)).st_mtime_ns
+            for b, _, fs in os.walk(root) for f in fs}
+
+
+class FullBuildWriteSetTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.full_tmp, cls.full = make_fixture(new_fact=True)
+        for cmd in (('build.py', cls.full, 'CI'), ('catalog.py', cls.full)):
+            assert run(*cmd).returncode == 0
+        cls.tmp, cls.mem = make_fixture()
+        for cmd in (('build.py', cls.mem, 'CI'), ('catalog.py', cls.mem)):
+            assert run(*cmd).returncode == 0
+        cls.lib = os.path.join(cls.mem, 'library')
+        old = time.time() - 86400
+        for b, _, fs in os.walk(cls.lib):
+            for f in fs:
+                os.utime(os.path.join(b, f), (old, old))
+        cls.mt_before = mtimes(cls.lib)
+        cls.sha_before = sha_tree(cls.lib)
+        shutil.copy(os.path.join(cls.full, NEW_FACT), os.path.join(cls.mem, NEW_FACT))
+        with open(os.path.join(cls.mem, 'topics', 'ci-merge.md'), encoding='utf-8') as fh:
+            lines = [ln.rstrip('\n') for ln in fh if ln.startswith('- [')]
+        write_source(cls.mem, lines + [NEW_LINE])
+        cls.res = [run('build.py', cls.mem, 'CI'), run('catalog.py', cls.mem)]
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+        shutil.rmtree(cls.full_tmp, ignore_errors=True)
+
+    def test_succeeds(self):
+        for r in self.res:
+            self.assertEqual(r.returncode, 0, r.stderr)
+
+    def test_byte_identical_to_build_with_the_fact_from_the_start(self):
+        lib = sha_tree(self.lib)
+        self.assertEqual(lib, sha_tree(os.path.join(self.full, 'library')))
+
+    def test_only_the_touched_files_change(self):
+        after = mtimes(self.lib)
+        changed = {k for k in after if after[k] != self.mt_before.get(k)}
+        cat = 'catalog' + os.sep
+        expected = set()
+        for k in after:
+            with open(os.path.join(self.lib, k), encoding='utf-8') as fh:
+                lists_fact = NEW_FACT in fh.read()
+            if k.startswith(cat) and os.sep not in k[len(cat):]:
+                expected.add(k)  # catalogue indexes carry the counts
+            elif k.endswith('CARD.md') or lists_fact:
+                expected.add(k)  # the shelf card, the chapter and the groups listing the fact
+        self.assertEqual(changed, expected)
+        self.assertEqual(sum(1 for k in changed if not k.startswith(cat) and not k.endswith('CARD.md')), 1)
+        untouched = [k for k in after if k not in changed]
+        self.assertTrue(untouched)
+        sha_now = sha_tree(self.lib)
+        for k in untouched:
+            self.assertEqual(sha_now[k], self.sha_before[k], k)
+
+    def test_existing_facts_untouched(self):
+        self.assertEqual(sha_tree(self.mem, only_root=True),
+                         sha_tree(os.path.join(self.full, ''), only_root=True))
 
 
 class WriteGuardTests(unittest.TestCase):
