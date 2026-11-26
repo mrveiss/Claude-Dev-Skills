@@ -106,8 +106,8 @@ def write_text(mem, path, text):
         fh.write(text)
 
 
-def prune_generated(mem, directory, keep):
-    """Delete stale *.md files that carry the generated marker and are not in keep."""
+def prune_generated(mem, directory, keep, marker=GENERATED):
+    """Delete stale *.md files that carry the generated marker (default memory-library's; code-library passes its own) and are not in keep."""
     if not os.path.isdir(directory):
         return
     lib = os.path.realpath(os.path.join(mem, 'library')) + os.sep
@@ -116,7 +116,7 @@ def prune_generated(mem, directory, keep):
         if not name.endswith('.md') or p in keep or not os.path.realpath(p).startswith(lib):
             continue
         with open(p, encoding='utf-8') as fh:
-            if GENERATED in fh.read(400):
+            if marker in fh.read(400):
                 os.remove(p)
 
 

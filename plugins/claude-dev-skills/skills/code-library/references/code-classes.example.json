@@ -1,0 +1,25 @@
+{
+ "_comment": "Code map schedule: rooms (services) and shelves (domains) by repo-relative globs. ** spans directories, * stays in one. First matching shelf of a room wins; files in a room matching no shelf go to its 'other' shelf; files in no room go to 'unclassified'. Omit the file (no --config) to get room = top directory, shelf = second directory.",
+ "exclude": ["**/migrations/**", "**/generated/**", "**/*.min.js"],
+ "rooms": {
+  "BE": {"dir": "backend", "title": "Backend service", "globs": ["backend/**"]},
+  "SH": {"dir": "shared", "title": "Shared primitives", "globs": ["shared/**"]},
+  "FE": {"dir": "frontend", "title": "Frontend", "globs": ["frontend/**"]}
+ },
+ "shelves": {
+  "RDS": {"name": "redis", "title": "Redis access", "room": "SH", "globs": ["shared/redis*/**", "shared/redis*.py"]},
+  "API": {"name": "api", "title": "HTTP API", "room": "BE", "globs": ["backend/api/**"]},
+  "CHT": {"name": "chat", "title": "Chat", "room": "BE", "globs": ["backend/chat/**"]}
+ },
+ "schedulers": {
+  "_comment": "Regexes: a decorator text or a function name that marks a scheduled job.",
+  "decorators": "schedul|cron|periodic|interval|every",
+  "names": "^(run_)?(scheduled|periodic|cron)_|_scheduler$|_cron$"
+ },
+ "layers": {
+  "_comment": "Layering for the proposed canonical home: primitive < orchestrator < agent. A file in no list is an orchestrator.",
+  "primitive": ["shared/**", "**/utils/**", "**/lib/**"],
+  "agent": ["**/agents/**"]
+ },
+ "fork_ignore_names": ["main", "logger", "router", "app", "setup", "teardown", "run", "cli", "config"]
+}
