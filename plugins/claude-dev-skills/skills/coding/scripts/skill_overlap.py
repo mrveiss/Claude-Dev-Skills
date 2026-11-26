@@ -95,6 +95,8 @@ def similarity(a, b, threshold=0.0):
     if a == b:
         return 1.0
     wa, wb = a.split(), b.split()
+    if not (wa and wb):
+        return 0.0
     if 2 * min(len(wa), len(wb)) / (len(wa) + len(wb)) < threshold:
         return 0.0
     sm = difflib.SequenceMatcher(None, wa, wb, autojunk=False)
