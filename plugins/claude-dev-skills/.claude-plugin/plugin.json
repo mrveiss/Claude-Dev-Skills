@@ -1,7 +1,7 @@
 {
   "name": "claude-dev-skills",
   "description": "Project-agnostic development skills for Claude Code, packaged as five router skills (coding, review-lenses, ui-design, web-audit, memory-library) whose detail loads on demand from references/ — canonical-source discipline, methodical process, clean commits, gap audits, memory hygiene, library-structured memory (shelves, catalogues, call numbers, an author/created hook), review lenses, UI design and website audits. Portable across projects; install once, get the whole working discipline.",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "author": {
     "name": "mrveiss",
     "url": "https://github.com/mrveiss"
