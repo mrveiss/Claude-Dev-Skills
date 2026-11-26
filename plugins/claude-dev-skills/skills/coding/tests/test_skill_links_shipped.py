@@ -1,4 +1,4 @@
-"""Every file a SKILL.md links to must be tracked by git, not gitignored.
+"""Every file a skill's markdown links to must exist and be tracked by git.
 
 Regression for #20: memory-library's references/ matched the repo's
 references/* ignore rule, so the merged skill linked to files that never shipped.
@@ -10,25 +10,43 @@ import unittest
 
 REPO = pathlib.Path(__file__).resolve().parents[5]
 SKILLS = REPO / "plugins"
-LINK = re.compile(r"`?(references/[\w./-]+|scripts/[\w./-]+)`?")
+# Fenced blocks are examples, never links. Outside them: a markdown link to a
+# relative file (inline code removed first, since a link inside `...` is an example),
+# or a backticked path into the skill's own references/ or scripts/ (paths elsewhere
+# in backticks name the user's project, not the skill).
+FENCE = re.compile(r"```.*?```", re.S)
+CODE = re.compile(r"`[^`\n]*`")
+MD_LINK = re.compile(r"\]\((?!https?:|#|/)((?:\./)?[\w./-]+\.\w+)\)")
+SKILL_PATH = re.compile(r"`((?:\./)?(?:references|scripts)/[\w./-]+\.\w+)`")
 
 
-def _ignored(path):
-    """True when git would ignore *path* (check-ignore exits 0 on a match)."""
-    run = subprocess.run(["git", "-C", str(REPO), "check-ignore", "-q", str(path)], check=False)
-    return run.returncode == 0
+def _links(text):
+    """Relative file links a reader would follow in *text*."""
+    text = FENCE.sub("", text)
+    return set(MD_LINK.findall(CODE.sub("", text))) | set(SKILL_PATH.findall(text))
+
+
+def _untracked(path):
+    """True when *path* is not in the git index: ignored, or simply never added."""
+    run = subprocess.run(["git", "-C", str(REPO), "ls-files", "--error-unmatch", str(path)],
+                         check=False, capture_output=True)
+    return run.returncode != 0
 
 
 class SkillLinksShipped(unittest.TestCase):
     def test_linked_files_exist_and_are_not_ignored(self):
         problems = []
-        for skill_md in SKILLS.glob("*/skills/*/SKILL.md"):
-            for rel in set(LINK.findall(skill_md.read_text(encoding="utf-8"))):
-                target = skill_md.parent / rel.rstrip(".,;:")
+        for doc in SKILLS.glob("*/skills/*/**/*.md"):
+            skill_dir = doc.relative_to(SKILLS).parts[:3]
+            base = SKILLS.joinpath(*skill_dir)
+            here = doc.parent
+            for rel in _links(doc.read_text(encoding="utf-8")):
+                rel = rel.rstrip(".,;:").removeprefix("./")
+                target = base / rel if (base / rel).exists() or rel.startswith(("references/", "scripts/")) else here / rel
                 if not target.exists():
-                    problems.append(f"{skill_md.relative_to(REPO)} links missing {rel}")
-                elif _ignored(target):
-                    problems.append(f"{skill_md.relative_to(REPO)} links gitignored {rel}")
+                    problems.append(f"{doc.relative_to(REPO)} links missing {rel}")
+                elif target.is_file() and _untracked(target):
+                    problems.append(f"{doc.relative_to(REPO)} links untracked {rel}")
         self.assertEqual(problems, [])
 
 
