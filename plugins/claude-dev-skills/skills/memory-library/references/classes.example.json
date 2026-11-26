@@ -1,0 +1,263 @@
+{
+ "_comment": "Class schedule. Codes are the readable call-number parts: ROOM.SHELF/author/CHAPTER/date. Add a shelf = add an entry under shelves; chapter regexes are matched in order, first hit wins.",
+ "rooms": {
+  "REF": {
+   "dir": "reference",
+   "title": "Reference: how things work, one shelf per topic"
+  },
+  "CUR": {
+   "dir": "current-work",
+   "title": "Handovers, ownership, resume notes"
+  },
+  "ARC": {
+   "dir": "archive",
+   "title": "Superseded and withdrawn rules"
+  }
+ },
+ "shelves": {
+  "CI": {
+   "name": "ci-merge",
+   "title": "CI & Merge",
+   "room": "REF",
+   "source": "topics/ci-merge.md",
+   "default_author": "sessions",
+   "authors": {
+    "owner": {
+     "label": "Owner rulebook",
+     "match": {
+      "file": "^feedback_",
+      "line": "—\\s*owner\\b"
+     }
+    },
+    "sessions": {
+     "label": "Session notes (authors not recorded)"
+    }
+   },
+   "chapters": [
+    {
+     "code": "SUP",
+     "key": "superseded",
+     "title": "Superseded",
+     "purpose": "Rules marked superseded, withdrawn or obsolete; kept for history only",
+     "regex": "SUPERSEDED|WITHDRAWN|OBSOLETE|superseded|withdrawn|no longer applies",
+     "room": "ARC"
+    },
+    {
+     "code": "HND",
+     "key": "current-work",
+     "title": "Handovers and current work",
+     "purpose": "Dated handovers and ownership notes; read only when resuming that work",
+     "regex": "\\]\\(\\.\\./project_|handover|handoff",
+     "room": "CUR"
+    },
+    {
+     "code": "TRN",
+     "key": "trains-queue",
+     "title": "Trains, merge queue and landing order",
+     "purpose": "How approved PRs are batched, queued and landed",
+     "regex": "\\btrain|merge queue|boarding|bisect|eject|landing order"
+    },
+    {
+     "code": "LCK",
+     "key": "locks-ledger",
+     "title": "Ledger, locks and holds",
+     "purpose": "Locks, ledger holds and session identity",
+     "regex": "ledger|lock|\\bhold"
+    },
+    {
+     "code": "SLT",
+     "key": "ci-slots-runners",
+     "title": "CI slots, runners and cancelling",
+     "purpose": "How many CI runs, who waits, cancelling",
+     "regex": "CI slot|slots?\\b|runner|cancel|concurren"
+    },
+    {
+     "code": "REV",
+     "key": "review-approval",
+     "title": "Review, threads and approval",
+     "purpose": "Reviewer passes, threads, verdicts and approvals",
+     "regex": "review|approv|thread|verdict"
+    },
+    {
+     "code": "PRL",
+     "key": "pr-lifecycle",
+     "title": "Opening, labelling and closing",
+     "purpose": "PR bodies, labels, milestones, issue links and closure",
+     "regex": "PR body|label|milestone|Closes|closing|closure"
+    },
+    {
+     "code": "SYN",
+     "key": "sync-conflicts",
+     "title": "Syncing with main and collisions",
+     "purpose": "Behind/sync rules, rebases and conflicts",
+     "regex": "behind|merge main|sync|rebase|conflict|force-push"
+    },
+    {
+     "code": "HOK",
+     "key": "secrets-hooks",
+     "title": "Hooks and secret scanning",
+     "purpose": "Pre-commit hooks and secret scanning",
+     "regex": "secrets|hook|no-verify"
+    },
+    {
+     "code": "CHK",
+     "key": "checks-suites",
+     "title": "Checks, suites and flakes",
+     "purpose": "Suites, guards, lint, flakes and what green means",
+     "regex": "pytest|flake|lint|guard|check|suite|green|red"
+    },
+    {
+     "code": "GHC",
+     "key": "gh-cli",
+     "title": "GitHub API and gh CLI",
+     "purpose": "gh and API quirks",
+     "regex": "\\bgh\\b|GraphQL|REST|rate limit"
+    },
+    {
+     "code": "DEP",
+     "key": "deps",
+     "title": "Dependencies",
+     "purpose": "Version bumps, pins and dependency bots",
+     "regex": "dependabot|npm|lockfile|requirements|pin|bump"
+    }
+   ],
+   "other": {
+    "code": "OTH",
+    "key": "other",
+    "title": "Other / misfiled",
+    "purpose": "Entries that belong to another shelf; candidates to re-shelve",
+    "regex": ""
+   }
+  },
+  "GIT": {
+   "name": "git-worktree",
+   "title": "Git & Worktrees",
+   "room": "REF",
+   "source": "topics/git-worktree.md",
+   "default_author": "sessions",
+   "authors": {
+    "owner": {
+     "label": "Owner rulebook",
+     "match": {
+      "file": "^feedback_",
+      "line": "—\\s*owner\\b"
+     }
+    },
+    "sessions": {
+     "label": "Session notes (authors not recorded)"
+    }
+   },
+   "chapters": [
+    {
+     "code": "SUP",
+     "key": "superseded",
+     "title": "Superseded",
+     "purpose": "Rules marked superseded, withdrawn or obsolete; kept for history only",
+     "regex": "SUPERSEDED|WITHDRAWN|OBSOLETE|superseded|withdrawn|no longer applies",
+     "room": "ARC"
+    },
+    {
+     "code": "HND",
+     "key": "current-work",
+     "title": "Handovers and current work",
+     "purpose": "Dated handovers and ownership notes; read only when resuming that work",
+     "regex": "\\]\\(\\.\\./project_|handover|handoff",
+     "room": "CUR"
+    },
+    {
+     "code": "BRN",
+     "key": "branches",
+     "title": "Branches and rebasing",
+     "purpose": "Branch naming, base branch, rebase and force-push",
+     "regex": "branch|rebase|force-push|base"
+    },
+    {
+     "code": "WKT",
+     "key": "worktrees",
+     "title": "Worktrees",
+     "purpose": "Creating, owning and removing worktrees",
+     "regex": "worktree"
+    },
+    {
+     "code": "STH",
+     "key": "stash",
+     "title": "Stash and recovery",
+     "purpose": "Stashing, reflog and push recovery",
+     "regex": "stash|reflog|recover"
+    }
+   ],
+   "other": {
+    "code": "OTH",
+    "key": "other",
+    "title": "Other / misfiled",
+    "purpose": "Entries that belong to another shelf; candidates to re-shelve",
+    "regex": ""
+   }
+  },
+  "TEST": {
+   "name": "testing-guards",
+   "title": "Testing & Guards",
+   "room": "REF",
+   "source": "topics/testing-guards.md",
+   "default_author": "sessions",
+   "authors": {
+    "owner": {
+     "label": "Owner rulebook",
+     "match": {
+      "file": "^feedback_",
+      "line": "—\\s*owner\\b"
+     }
+    },
+    "sessions": {
+     "label": "Session notes (authors not recorded)"
+    }
+   },
+   "chapters": [
+    {
+     "code": "SUP",
+     "key": "superseded",
+     "title": "Superseded",
+     "purpose": "Rules marked superseded, withdrawn or obsolete; kept for history only",
+     "regex": "SUPERSEDED|WITHDRAWN|OBSOLETE|superseded|withdrawn|no longer applies",
+     "room": "ARC"
+    },
+    {
+     "code": "HND",
+     "key": "current-work",
+     "title": "Handovers and current work",
+     "purpose": "Dated handovers and ownership notes; read only when resuming that work",
+     "regex": "\\]\\(\\.\\./project_|handover|handoff",
+     "room": "CUR"
+    },
+    {
+     "code": "TST",
+     "key": "tests",
+     "title": "Writing tests",
+     "purpose": "How tests are written and run",
+     "regex": "\\btests?\\b|pytest|unittest|fixture"
+    },
+    {
+     "code": "GRD",
+     "key": "guards",
+     "title": "Guards and ratchets",
+     "purpose": "Lint rules, guards and baselines",
+     "regex": "guard|ratchet|baseline|lint"
+    },
+    {
+     "code": "FLK",
+     "key": "flakes",
+     "title": "Flakes",
+     "purpose": "Known flaky checks and their fixes",
+     "regex": "flak"
+    }
+   ],
+   "other": {
+    "code": "OTH",
+    "key": "other",
+    "title": "Other / misfiled",
+    "purpose": "Entries that belong to another shelf; candidates to re-shelve",
+    "regex": ""
+   }
+  }
+ }
+}

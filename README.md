@@ -1,7 +1,7 @@
 # Claude Dev Skills
 
 A portable [Claude Code](https://claude.com/claude-code) plugin — a set of five router
-meta-skills that encode *how to work*: exploring a request before building, planning and
+skills that encode *how to work*: exploring a request before building, planning and
 debugging methodically, reviewing and auditing, designing UI, committing cleanly, and keeping
 memory tidy. Packaged as one marketplace plugin so the whole working discipline moves to a new
 machine in two commands.
@@ -138,6 +138,7 @@ table (`/claude-dev-skills:coding <workflow>`).
 
 ### Memory
 
+- **`coding skill-structure`** — One job per skill, one home per subject; router skill vs meta-skill; resolving overlaps with `scripts/skill_overlap.py`.
 - **`coding memory-cleanup`** — An end-of-session hygiene ritual for a file-based memory system: keep the
   index an index, ensure every entry is reachable from a topic file, and prune what has gone
   stale or duplicated.
@@ -172,11 +173,12 @@ claude plugin marketplace remove claude-dev-skills     # optional: forget the ma
 1. **Few listed skills, detail in references.** Each listed `SKILL.md` is a router of at most 60
    lines; workflow bodies live in `references/<workflow>.md`, each opening with `When to use:`.
    Sub-topics are never separately listed skills.
-2. **Every published skill must be self-contained.** A skill may not depend on files that aren't
+2. **One job per skill, one home per subject.** Run `python3 plugins/claude-dev-skills/skills/coding/scripts/skill_overlap.py plugins/claude-dev-skills` before opening a PR; see `coding/references/skill-structure.md`.
+3. **Every published skill must be self-contained.** A skill may not depend on files that aren't
    committed — an installer only receives what ships, including `references/`.
-3. **Edit → PR → review.** Workflow-rule changes get the same review as code. State in the PR what
+4. **Edit → PR → review.** Workflow-rule changes get the same review as code. State in the PR what
    behaviour changed and why.
-4. **Write the `description` for triggering.** It is how Claude decides when the skill applies —
+5. **Write the `description` for triggering.** It is how Claude decides when the skill applies —
    name the situations, not the mechanics.
 
 ## Layout
