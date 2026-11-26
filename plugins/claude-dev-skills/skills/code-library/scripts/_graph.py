@@ -178,10 +178,33 @@ def slug_module(rel):
     return _lib.slug(re.sub(r'\.[A-Za-z]+$', '', rel).replace('/', '--'))
 
 
+def _inside(repo, path):
+    r, p = os.path.realpath(repo) + os.sep, os.path.realpath(path) + os.sep
+    return p.startswith(r)
+
+
 def check_out_outside(repo, out):
-    r, o = os.path.realpath(repo) + os.sep, os.path.realpath(out) + os.sep
-    if o.startswith(r) or o == r:
-        _lib.die(f'refusing to write inside the target repo: {out} is under {repo}')
+    """Refuse an output location that resolves into the repo: out itself and out/library (a symlink there would redirect writes)."""
+    for p in (out, os.path.join(out, 'library')):
+        if _inside(repo, p):
+            _lib.die(f'refusing to write inside the target repo: {p} resolves under {repo}')
+
+
+def guard_paths(repo, paths):
+    """Check the realpath of every directory about to be written, before the first write (nothing is written on refusal)."""
+    for p in paths:
+        if _inside(repo, os.path.dirname(p)):
+            _lib.die(f'refusing to write inside the target repo: {p} resolves under {repo}')
+
+
+REF_OK = re.compile(r'^[A-Za-z0-9_][A-Za-z0-9._/@{}~^+-]*$')
+
+
+def check_ref(ref):
+    """A commit or ref name: never an option (no leading '-'), only ref-name characters."""
+    if not REF_OK.match(ref):
+        _lib.die(f'invalid --commit {ref!r}: expected a hex SHA or ref name (no leading "-")')
+    return ref
 
 
 def build_model(repo, cls):
@@ -209,8 +232,9 @@ def build_model(repo, cls):
 def git_head(repo, ref='HEAD'):
     """(sha, commit date) of ref via `git`, which reads objects and runs no repo code; ('unknown', 'unknown') without git."""
     import subprocess
+    check_ref(ref)
     try:
-        out = subprocess.run(['git', '-C', repo, 'log', '-1', '--format=%H %cs', ref], capture_output=True, text=True, check=True).stdout.split()
+        out = subprocess.run(['git', '-C', repo, 'log', '-1', '--format=%H %cs', '--end-of-options', ref], capture_output=True, text=True, check=True).stdout.split()
         return out[0], out[1]
     except (OSError, subprocess.CalledProcessError, IndexError):
         return 'unknown', 'unknown'

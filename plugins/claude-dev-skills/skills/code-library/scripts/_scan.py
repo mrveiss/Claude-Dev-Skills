@@ -218,17 +218,26 @@ def _schedulers(tree, dec_re, name_re):
     return out
 
 
+def _empty_py(text, skipped=''):
+    return {'lang': 'py', 'error': True, 'skipped': skipped, 'defs': [], 'methods': [], 'routes': [], 'imports': [], 'env': {},
+            'keys': {}, 'tables': {}, 'issues': _issues_py(text), 'cli': False, 'schedulers': []}
+
+
 def parse_python(text, sched_dec=DEFAULT_SCHED_DECORATOR, sched_name=DEFAULT_SCHED_NAME):
     try:
         tree = ast.parse(text)
-    except (SyntaxError, ValueError, RecursionError):
-        return {'lang': 'py', 'error': True, 'defs': [], 'methods': [], 'routes': [], 'imports': [], 'env': {},
-                'keys': {}, 'tables': {}, 'issues': _issues_py(text), 'cli': False, 'schedulers': []}
-    defs, methods = _defs(tree)
-    routes, imports, env, keys, tables = _walk_facts(tree)
-    return {'lang': 'py', 'error': False, 'defs': defs, 'methods': methods, 'routes': routes,
-            'imports': imports, 'env': env, 'keys': keys, 'tables': tables, 'issues': _issues_py(text),
-            'cli': any(_is_main_guard(n) for n in tree.body), 'schedulers': _schedulers(tree, sched_dec, sched_name)}
+    except (SyntaxError, ValueError):
+        return _empty_py(text)
+    except RecursionError:
+        return _empty_py(text, 'too deep')
+    try:  # ast.dump/unparse and _sig recurse: a deeply nested but parseable file skips, it never aborts the build
+        defs, methods = _defs(tree)
+        routes, imports, env, keys, tables = _walk_facts(tree)
+        return {'lang': 'py', 'error': False, 'skipped': '', 'defs': defs, 'methods': methods, 'routes': routes,
+                'imports': imports, 'env': env, 'keys': keys, 'tables': tables, 'issues': _issues_py(text),
+                'cli': any(_is_main_guard(n) for n in tree.body), 'schedulers': _schedulers(tree, sched_dec, sched_name)}
+    except RecursionError:
+        return _empty_py(text, 'too deep')
 
 
 def parse_frontend(text):
@@ -251,7 +260,7 @@ def parse_frontend(text):
         m = TS_COMMENT_ISSUE.search(line)
         if m:
             issues.setdefault(int(m.group(1)), i)
-    return {'lang': 'fe', 'error': False, 'defs': defs, 'methods': [], 'routes': [], 'env': env, 'keys': {}, 'tables': {},
+    return {'lang': 'fe', 'error': False, 'skipped': '', 'defs': defs, 'methods': [], 'routes': [], 'env': env, 'keys': {}, 'tables': {},
             'imports': [{'module': m, 'name': None, 'level': 0} for m in TS_IMPORT.findall(text)],
             'issues': issues, 'cli': False, 'schedulers': []}
 

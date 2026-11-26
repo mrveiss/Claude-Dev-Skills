@@ -138,8 +138,9 @@ def flat(title, sha, table, fmt=str):
     return f'{MARK}\n# {title}\n\ncommit: {sha}\n\n{body}'
 
 
-def write_all(out, files):
+def write_all(repo, out, files):
     """files: {abs path: text}. Writes through memory-library's write_text and prunes stale generated files per directory."""
+    _graph.guard_paths(repo, files)
     by_dir = collections.defaultdict(set)
     for p, text in sorted(files.items()):
         _lib.write_text(out, p, text)
@@ -181,10 +182,12 @@ def build(repo, out, sha, date, cfg_path=None, issues_path=None):
                                      ('keys', 'Redis keys and tables', cats[3], str), ('issues', 'Issues cited', cats[4], lambda n: f'#{n}')):
         files[os.path.join(lib, 'catalog', f'{fname}.md')] = flat(title, sha, table, fmt)
     stats = {'files': len(model['files']), 'domains': len(index), 'concepts': len(cats[0]), 'routes': len(cats[1]),
-             'env': len(cats[2]), 'keys': len(cats[3]), 'issues': len(cats[4])}
+             'env': len(cats[2]), 'keys': len(cats[3]), 'issues': len(cats[4]),
+             'skipped': sum(1 for r in model['files'].values() if r.get('skipped'))}
     files[os.path.join(lib, 'INDEX.md')] = (f'{MARK}\n# Code map\n\ncommit: {sha}\ndate: {date}\n\n'
-                                           + ''.join(f'- {k}: {v}\n' for k, v in stats.items()) + '\n## Cards\n' + ''.join(index))
-    write_all(out, files)
+                                           + ''.join(f'- {k}: {v}\n' for k, v in stats.items()) + '\n## Cards\n' + ''.join(index)
+                                           + ''.join(f'\nskipped: {r} ({rec["skipped"]})' for r, rec in sorted(model['files'].items()) if rec.get('skipped')))
+    write_all(repo, out, files)
     return stats
 
 

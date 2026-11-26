@@ -103,9 +103,9 @@ class Base(unittest.TestCase):
         cls = _graph.Classifier(_graph.load_config(self.cfg))
         return cls, _graph.build_model(self.repo, cls)
 
-    def report(self, audit=None, issues=None, min_nodes=20):
+    def report(self, audit=None, issues=None, min_nodes=20, show_all=True):
         cls, model = self.model()
-        return forks.report(self.repo, SHA, model, cls, audit, issues, min_nodes)
+        return forks.report(self.repo, SHA, model, cls, audit, issues, min_nodes, show_all)
 
 
 class MapBuilding(Base):
@@ -245,7 +245,73 @@ class Forks(Base):
         self.assertTrue(os.path.isfile(self.lib('forks', 'REPORT.md')))
 
 
+class ConsumedFilter(Base):
+    def test_unconsumed_classes_collapse(self):
+        text, classes = self.report(show_all=False)
+        self.assertIn('`get_client` - FORK', text)  # imported by name from the shared home
+        self.assertNotIn('`Store` - ', text)
+        self.assertNotIn('`TTL` - ', text)
+        self.assertRegex(text, r'local, not consumed: \d+ classes \(rerun with --all to list them\)')
+        self.assertTrue(any(c['concept'] == 'Store' and not c['headline'] for c in classes))
+
+    def test_all_lists_the_local_ones(self):
+        text, _ = self.report(show_all=True)
+        self.assertIn('## Local, not consumed', text)
+        self.assertIn('`Store` - DUPLICATE', text)
+
+    def test_script_homes_do_not_count(self):
+        make_repo(self.repo, {'svc_b/tools/a.py': 'def helper():\n    return 1\n\n\nif __name__ == "__main__":\n    helper()\n',
+                              'svc_b/tools/b.py': 'def helper():\n    return 2\n',
+                              'svc_b/tools/use.py': 'from svc_b.tools.b import helper\n'})
+        text, _ = self.report(show_all=False)
+        self.assertNotIn('`helper` - ', text)  # only one home is a non-__main__ module
+        make_repo(self.repo, {'svc_b/tools/a.py': 'def helper():\n    return 1\n'})
+        self.assertIn('`helper` - FORK', self.report(show_all=False)[0])
+
+
 class Safety(Base):
+    def test_symlinked_library_into_repo_is_refused(self):
+        os.makedirs(self.out)
+        os.symlink(os.path.join(self.repo, 'svc_a'), os.path.join(self.out, 'library'))
+        before = tree_hash(self.repo)
+        for script in ('index.py', 'forks.py'):
+            run = subprocess.run([sys.executable, '-B', '-I', os.path.join(SCRIPTS, script), self.repo, self.out], capture_output=True, text=True)
+            self.assertEqual(run.returncode, 2, run.stderr)
+            self.assertIn('refusing to write inside the target repo', run.stderr)
+        self.assertEqual(tree_hash(self.repo), before)
+
+    def test_symlinked_subdir_into_repo_is_refused_before_any_write(self):
+        os.makedirs(self.lib())
+        os.symlink(os.path.join(self.repo, 'svc_b'), self.lib('service-b'))
+        before = tree_hash(self.repo)
+        with self.assertRaises(SystemExit) as cm:
+            self.build()
+        self.assertEqual(cm.exception.code, 2)
+        self.assertEqual(tree_hash(self.repo), before)
+        self.assertFalse(os.path.exists(self.lib('INDEX.md')))
+
+    def test_deep_nesting_is_skipped_not_fatal(self):
+        deep = 'def big():\n    return ' + ' + '.join(['1'] * 6000) + '\n\n\ndef ok():\n    return 1  # see #321\n'
+        make_repo(self.repo, {'svc_a/deep.py': deep})
+        stats = self.build()
+        self.assertEqual(stats['skipped'], 1)
+        self.assertIn('skipped: svc_a/deep.py (too deep)', self.text('INDEX.md'))
+        self.assertIn('#321 | svc_a/deep.py:6', self.text('catalog', 'issues.md'))
+        self.assertTrue(os.path.isfile(self.lib('service-a', 'api', 'CARD.md')))
+
+    def test_commit_cannot_be_an_option(self):
+        marker = os.path.join(self.tmp, 'o')
+        for bad in ('--output=' + marker, '-x', '', 'a b'):
+            with self.assertRaises(SystemExit) as cm:
+                _graph.git_head(self.repo, bad)
+            self.assertEqual(cm.exception.code, 2)
+        run = subprocess.run([sys.executable, '-B', '-I', os.path.join(SCRIPTS, 'index.py'), self.repo, self.out, '--commit=--output=' + marker],
+                             capture_output=True, text=True)
+        self.assertEqual(run.returncode, 2)
+        self.assertFalse(os.path.exists(marker))
+        self.assertEqual(_graph.git_head(self.repo, 'deadbeef' * 5), ('unknown', 'unknown'))
+
+
     def test_target_code_is_never_imported_or_run(self):
         sentinel = os.path.join(self.tmp, 'sentinel')
         make_repo(self.repo, {'svc_a/trap.py': TRAP.replace('__SENTINEL__', repr(sentinel)), 'svc_a/conftest.py': TRAP.replace('__SENTINEL__', repr(sentinel)),
@@ -253,7 +319,7 @@ class Safety(Base):
         before_path, before_mods = list(sys.path), set(sys.modules)
         self.build()
         cls, model = self.model()
-        forks.report(self.repo, SHA, model, cls, None, None, 20)
+        forks.report(self.repo, SHA, model, cls, None, None, 20, True)
         self.assertFalse(os.path.exists(sentinel))
         self.assertEqual(sys.path, before_path)
         self.assertFalse({m for m in set(sys.modules) - before_mods if m.split('.')[0] in ('svc_a', 'svc_b', 'trap')})

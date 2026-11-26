@@ -2,7 +2,7 @@
 """Report forks and duplicates, one entry per class (concept, all homes, canonical home, importers, issue). Read-only.
 
 usage: python3 -I forks.py <repo> <out> [--audit canonical-audit.json] [--issues gh-issues.json]
-                           [--commit SHA] [--commit-date D] [--config code-classes.json] [--min-nodes N]
+                           [--commit SHA] [--commit-date D] [--config code-classes.json] [--min-nodes N] [--all]
 
 (a) same top-level Python symbol in 2+ modules: differing bodies = FORK, identical = DUPLICATE;
 (a2) same Python file name in 2+ directories, same verdict rule (a copied module that diverged);
@@ -55,6 +55,37 @@ def symbol_importers(model, home, name):
     return sorted(out)
 
 
+def named_importers(model, home, name):
+    """Files that import `name` BY NAME from home (`from m import name`, text-resolved); module-style imports do not count."""
+    res = model['resolver']
+    return sorted(i for i in model['importers'].get(home, [])
+                  if model['files'][i]['lang'] == 'py'
+                  and any(imp['name'] == name and home in res.python(i, imp) for imp in model['files'][i]['imports']))
+
+
+def consumed_homes(model, e):
+    """Homes whose symbol is imported by name elsewhere; a module-file class counts any import of the module."""
+    out = []
+    for h in e['defs']:
+        name = h.get('sym', e['sym']).split('.')[0]
+        users = symbol_importers(model, h['rel'], name) if h['kind'] == 'module' else named_importers(model, h['rel'], name)
+        if users:
+            out.append(h['rel'])
+    return out
+
+
+def is_script(model, rel):
+    rec = model['files'][rel]
+    return rec['cli'] or os.path.basename(rel) == '__main__.py'
+
+
+def classify_headline(model, e):
+    """Headline when 1+ home is consumed AND 2+ homes are not script (`__main__`) modules; else local, not consumed."""
+    e['consumed'] = consumed_homes(model, e)
+    e['headline'] = bool(e['consumed']) and sum(not is_script(model, h['rel']) for h in e['defs']) >= 2
+    return e['headline']
+
+
 def propose(model, homes, name):
     """Lowest layer already defining it wins (primitive < orchestrator < agent), then the most-imported, then path."""
     scored = []
@@ -99,7 +130,7 @@ def near_classes(model, cls, min_nodes):
         if len(set(names)) == 1 and '.' not in names[0]:
             continue  # same top-level name: class (a) already reports it
         top = collections.Counter(names).most_common(1)[0][0]
-        homes = [{'rel': r, 'line': m['line'], 'kind': 'function', 'layer': cls.layer(r)} for r, m in members]
+        homes = [{'rel': r, 'line': m['line'], 'kind': 'function', 'layer': cls.layer(r), 'sym': m['name']} for r, m in members]
         out.append({'concept': top, 'verdict': 'NEAR-DUPLICATE', 'what': f'{len(members)} bodies, names: ' + ', '.join(sorted(set(names))[:6]),
                     'homes': [(h['rel'], h['line']) for h in homes], 'defs': homes, 'sym': top.split('.')[-1]})
     return out
@@ -164,30 +195,40 @@ def render_entry(i, e, model, issues, audit_files):
     return ''.join(lines)
 
 
-def report(repo, sha, model, cls, audit, issues, min_nodes):
-    classes = symbol_classes(model, cls)
-    near = near_classes(model, cls, min_nodes)
-    files = file_classes(model, cls)
+def section(title, entries, n, model, issues, audit_files):
+    body = f'## {title}\n\n'
+    for e in entries:
+        n += 1
+        body += render_entry(n, e, model, issues, audit_files) + '\n'
+    return body, n
+
+
+def report(repo, sha, model, cls, audit, issues, min_nodes, show_all=False):
+    groups = [('Same symbol in 2+ modules', symbol_classes(model, cls)), ('Same file name in 2+ directories', file_classes(model, cls)),
+              ('Near-duplicate function bodies', near_classes(model, cls, min_nodes))]
     key = lambda e: (-len(e['homes']), e['concept'])  # noqa: E731
     audit_files = collections.defaultdict(set)
     for d in audit or []:
         audit_files[str(d.get('file', '')).replace(os.sep, '/')].add(d['rule_id'])
-    head = (f'{MARK}\n# Fork and duplicate report\n\ncommit: {sha}\n\nclasses: {sum(c["verdict"] == "FORK" for c in classes)} fork, '
-            f'{sum(c["verdict"] == "DUPLICATE" for c in classes)} duplicate, {len(near)} near-duplicate, {len(files)} same-file-name\n'
+    for _, g in groups:
+        for e in g:
+            classify_headline(model, e)
+    every = sorted((e for _, g in groups for e in g), key=key)
+    head_n = sum(e['headline'] for e in every)
+    local = [e for e in every if not e['headline']]
+    count = lambda v: sum(e['verdict'] == v for e in every if e['headline'])  # noqa: E731
+    head = (f'{MARK}\n# Fork and duplicate report\n\ncommit: {sha}\n\nheadline classes: {head_n} ({count("FORK")} fork, '
+            f'{count("DUPLICATE")} duplicate, {count("NEAR-DUPLICATE")} near-duplicate)\n'
+            f'local, not consumed: {len(local)} classes' + (' (listed below)' if show_all else ' (rerun with --all to list them)') + '\n'
             'a class is one concept with all its homes: one issue, one fix per class\n\n')
     head += (NO_AUDIT + '\n\n') if audit is None else f'audit: merged {len(audit)} diagnostic(s)\n\n'
-    body, n = '## Same symbol in 2+ modules\n\n', 0
-    for e in sorted(classes, key=key):
-        n += 1
-        body += render_entry(n, e, model, issues, audit_files) + '\n'
-    body += '## Same file name in 2+ directories\n\n'
-    for e in sorted(files, key=key):
-        n += 1
-        body += render_entry(n, e, model, issues, audit_files) + '\n'
-    body += '## Near-duplicate function bodies\n\n'
-    for e in sorted(near, key=key):
-        n += 1
-        body += render_entry(n, e, model, issues, audit_files) + '\n'
+    body, n = '', 0
+    for title, g in groups:
+        text, n = section(title, sorted((e for e in g if e['headline']), key=key), n, model, issues, audit_files)
+        body += text
+    if show_all:
+        text, n = section('Local, not consumed', sorted(local, key=key), n, model, issues, audit_files)
+        body += text
     if audit:
         body += '## Audit findings by rule\n\n'
         for rule, ds in audit_by_rule(audit).items():
@@ -196,7 +237,7 @@ def report(repo, sha, model, cls, audit, issues, min_nodes):
             hits = match_issues({'sym': rule, 'homes': [(str(d.get('file')), 0) for d in ds]}, issues)
             if hits is not None:
                 body += '  - issue: ' + ('; '.join(f'#{h["number"]} ({h.get("state", "?")})' for h in hits) or 'no issue yet') + '\n'
-    return head + body, sorted(classes + files + near, key=key)
+    return head + body, every
 
 
 def main(argv=None):
@@ -209,6 +250,7 @@ def main(argv=None):
     ap.add_argument('--commit-date')
     ap.add_argument('--config')
     ap.add_argument('--min-nodes', type=int, default=MIN_NODES)
+    ap.add_argument('--all', action='store_true', help='also list the local, not consumed classes')
     a = ap.parse_args(argv)
     repo, out = os.path.abspath(a.repo), os.path.abspath(a.out)
     _graph.check_out_outside(repo, out)
@@ -221,9 +263,11 @@ def main(argv=None):
         with open(a.issues, encoding='utf-8') as fh:
             issues = json.load(fh)
     audit = load_audit(a.audit) if a.audit else None
-    text, classes = report(repo, sha, model, cls, audit, issues, a.min_nodes)
-    _lib.write_text(out, os.path.join(out, 'library', 'forks', 'REPORT.md'), text)
-    print(f'fork report for {sha}: {len(classes)} classes; ' + ('audit merged' if audit is not None else NO_AUDIT))
+    text, classes = report(repo, sha, model, cls, audit, issues, a.min_nodes, a.all)
+    path = os.path.join(out, 'library', 'forks', 'REPORT.md')
+    _graph.guard_paths(repo, [path])
+    _lib.write_text(out, path, text)
+    print(f'fork report for {sha}: {sum(c["headline"] for c in classes)} headline of {len(classes)} classes; ' + ('audit merged' if audit is not None else NO_AUDIT))
 
 
 if __name__ == '__main__':
