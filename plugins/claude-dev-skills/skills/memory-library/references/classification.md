@@ -9,7 +9,7 @@ One data file per memory dir; start from `references/classes.example.json` (shel
 | Key | Meaning |
 |---|---|
 | `rooms` | `{CODE: {dir, title}}`, e.g. `REF` -> `reference` |
-| `ledger_cmd` | Optional ledger command (on PATH or a path); `<cmd> sessions` maps names to session ids, env `MEMORY_LIBRARY_LEDGER` overrides. Used only by `authors.py`; omit it and sessions stay unrecorded |
+| `ledger_cmd` | Optional ledger command (on PATH or a path); `<cmd> sessions` maps names to session ids, env `MEMORY_LIBRARY_LEDGER` overrides. Used only by `authors.py`; omit it and sessions stay unrecorded. It is **executed** (as argv, no shell), so it must be a trusted local command; an empty value or one with shell metacharacters is refused |
 | `shelves` | `{CODE: {name, title, room, source, default_author, authors, chapters, other}}` |
 | `shelves.*.source` | Flat topic list to shelve, relative to `<mem>` (`topics/ci-merge.md`) |
 | `shelves.*.authors` | `{author: {label, match: {file, line}}}`; regex on fact file name or entry line; first match wins |

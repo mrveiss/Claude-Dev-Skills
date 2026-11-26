@@ -14,6 +14,7 @@ from test_memory_library import sha_tree  # noqa: E402
 LEDGER = f'''#!{sys.executable}
 print("autobot-ai-m2      no beat    sid abcd1234  socket 1.sock    seen 11-19 00:41")
 print("autobot-ai-old     no beat    sid 11112222  socket 2.sock    seen 11-19 00:41")
+print("autobot-ai-bad     no beat    socket 99998888.sock seen 11-19 00:41  (was sidecar 77776666)")
 print("autobot-ai-twin    no beat    sid 33334444  socket 3.sock    seen 11-19 00:41")
 print("autobot-ai-twin2   no beat    sid 33334444  socket 4.sock    seen 11-19 00:41")
 '''
@@ -22,6 +23,7 @@ SESSIONS = {  # fact -> (frontmatter lines, expected author, expected source)
     'a_ledger.md': ('originSessionId: abcd1234-0000-0000-0000-000000000000\n', 'autobot-ai-m2', 'ledger'),
     'a_unknown.md': ('originSessionId: ffff0000-0000-0000-0000-000000000000\n', 'unrecorded', 'unresolved'),
     'a_twin.md': ('originSessionId: 33334444-0000-0000-0000-000000000000\n', 'unrecorded', 'unresolved'),
+    'a_other_column.md': ('originSessionId: 99998888-0000-0000-0000-000000000000\n', 'unrecorded', 'unresolved'),
     'a_none.md': ('', 'unrecorded', 'unresolved'),
 }
 
@@ -115,7 +117,7 @@ class WithoutLedger(unittest.TestCase):
             self.assertEqual(sum(message in ln for ln in out.stdout.splitlines()), 1, out.stdout)
             table = authors(mem)
             self.assertEqual(table['a_front.md'], {'author': 'carol', 'source': 'frontmatter'})
-            for name in ('a_ledger.md', 'a_unknown.md', 'a_twin.md', 'a_none.md'):
+            for name in ('a_ledger.md', 'a_unknown.md', 'a_twin.md', 'a_none.md', 'a_other_column.md'):
                 self.assertEqual(table[name], {'author': 'unrecorded', 'source': 'unresolved'}, name)
             self.assertEqual(sha_tree(mem, only_root=True), before)
         finally:
@@ -126,6 +128,16 @@ class WithoutLedger(unittest.TestCase):
 
     def test_no_ledger_cmd_configured(self):
         self.check('no ledger configured', cfg_edit=lambda cfg: cfg.pop('ledger_cmd'))
+
+    def test_unsafe_or_empty_ledger_cmd_is_refused(self):
+        for bad in ('', '  ', 'ledger; rm -rf x', 'ledger | cat', '$(x)'):
+            tmp, home, mem, bin_dir = with_facts(True, lambda cfg: cfg.update(ledger_cmd=bad))
+            try:
+                out = run('authors.py', mem, tmp, home, bin_dir)
+                self.assertEqual(out.returncode, 2, bad)
+                self.assertIn('plain command or path', out.stderr)
+            finally:
+                shutil.rmtree(tmp)
 
     def test_catalog_without_authors_json_says_so(self):
         tmp, home, mem, bin_dir = with_facts(False)

@@ -22,16 +22,20 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _lib  # noqa: E402
 
-ROW_RE = re.compile(r'^(\S+)\s.*?\bsid\s+([0-9a-f]{8,})\b')
+# `ledger sessions` row: name, liveness text, then the `sid <hex>` column (two or more spaces before it)
+ROW_RE = re.compile(r'^(\S+)\s+(?:(?!\bsid\b).)*?\s{2,}sid\s+([0-9a-f]{8,})(?=\s|$)')
+UNSAFE_CMD_RE = re.compile(r'[;|&<>$`\\"\'(){}*?!#\[\]\n]')
 MIN_SID = 8  # a recorded sid prefix shorter than this is not distinctive enough to match on
 
 
 def ledger_sessions(cfg, notes):
     """[(name, sid)] from `<ledger_cmd> sessions`, or None (with the reason in notes) when no ledger answers."""
-    cmd = os.environ.get('MEMORY_LIBRARY_LEDGER') or cfg.get('ledger_cmd')
-    if not cmd:
+    cmd = os.environ.get('MEMORY_LIBRARY_LEDGER', cfg.get('ledger_cmd'))
+    if cmd is None or (cmd == '' and 'MEMORY_LIBRARY_LEDGER' not in os.environ and 'ledger_cmd' not in cfg):
         notes.append('no ledger configured (ledger_cmd in classes.json): sessions are not resolved')
         return None
+    if not cmd.strip() or UNSAFE_CMD_RE.search(cmd):
+        _lib.die(f'ledger_cmd {cmd!r} must be a plain command or path (no shell metacharacters); see references/classification.md')
     argv = shlex.split(os.path.expanduser(cmd))
     if not argv or not shutil.which(argv[0]):
         notes.append(f'ledger command {argv[0] if argv else cmd!r} not found: sessions are not resolved')

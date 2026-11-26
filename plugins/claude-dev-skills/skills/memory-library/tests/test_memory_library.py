@@ -23,7 +23,7 @@ OTHER_DAY = time.mktime((2026, 6, 9, 12, 0, 0, 0, 0, -1))
 
 
 def run(script, *args, stdin=None):
-    return subprocess.run([sys.executable, '-I', os.path.join(SCRIPTS, script), *args],
+    return subprocess.run([sys.executable, '-B', '-I', os.path.join(SCRIPTS, script), *args],
                           input=stdin, capture_output=True, text=True)
 
 
@@ -291,7 +291,7 @@ HOOK = os.path.join(SCRIPTS, 'check_new_fact.py')
 def hook(tool, path, content='', name='Write'):
     payload = {'hook_event_name': 'PreToolUse', 'tool_name': name,
                'tool_input': {'file_path': path, 'content': content}}
-    return subprocess.run([sys.executable, '-I', HOOK], input=json.dumps(payload),
+    return subprocess.run([sys.executable, '-B', '-I', HOOK], input=json.dumps(payload),
                           capture_output=True, text=True)
 
 
@@ -347,10 +347,10 @@ class HookTests(unittest.TestCase):
         self.assertEqual(r.returncode, 2)
 
     def test_malformed_json_and_missing_file_path_fail_open(self):
-        bad = subprocess.run([sys.executable, '-I', HOOK], input='{not json', capture_output=True, text=True)
+        bad = subprocess.run([sys.executable, '-B', '-I', HOOK], input='{not json', capture_output=True, text=True)
         self.assertNotEqual(bad.returncode, 2)
         payload = json.dumps({'tool_name': 'Write', 'tool_input': {'content': 'x'}})
-        r = subprocess.run([sys.executable, '-I', HOOK], input=payload, capture_output=True, text=True)
+        r = subprocess.run([sys.executable, '-B', '-I', HOOK], input=payload, capture_output=True, text=True)
         self.assertNotEqual(r.returncode, 2)
 
     def test_backslash_path_to_new_fact_blocks(self):

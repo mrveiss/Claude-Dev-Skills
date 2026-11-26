@@ -84,7 +84,7 @@ class RefDates:
     """Issue/PR creation dates via `gh api`, cached under library/ref-dates.json (successes only)."""
 
     def __init__(self, mem, repo, notes):
-        self.mem, self.repo = mem, repo
+        self.mem, self.repo, self.notes = mem, repo, notes
         self.path = os.path.join(mem, 'library', 'ref-dates.json')
         self.cache = {}
         if os.path.isfile(self.path):
@@ -104,11 +104,16 @@ class RefDates:
 
     def get(self, number):
         """Cached creation stamp, or None: lookups happen only in prefetch()."""
-        return self.cache.get(self.repo, {}).get(str(number))
+        known = self.cache.get(self.repo)
+        return known.get(str(number)) if isinstance(known, dict) else None
 
     def prefetch(self, numbers):
         """Fetch every uncached number in GraphQL batches; a number the response lacks counts as failed."""
-        known = self.cache.setdefault(self.repo, {})
+        known = self.cache.get(self.repo)
+        if not isinstance(known, dict):
+            if known is not None:
+                self.notes.append(f'ref-dates.json entry for {self.repo} is unreadable: ignored, will be rebuilt')
+            known = self.cache[self.repo] = {}
         todo = sorted({int(n) for n in numbers if str(int(n)) not in known})
         for i in range(0, len(todo), BATCH):
             batch = todo[i:i + BATCH]
@@ -128,13 +133,14 @@ class RefDates:
         try:
             done = subprocess.run(['gh', 'api', 'graphql', '-f', f'query={query}', '-f', f'owner={owner}',
                                    '-f', f'name={name}'], capture_output=True, text=True, timeout=120)
-            repo = (json.loads(done.stdout).get('data') or {}).get('repository') or {}
+            repo = (json.loads(done.stdout).get('data') or {}).get('repository')
         except (OSError, subprocess.TimeoutExpired, ValueError, AttributeError):
             return {}
         out = {}
         for n in batch:  # gh exits non-zero when one number is missing; the others in the response are still good
-            stamp = (repo.get(f'n{n}') or {}).get('createdAt')
-            if stamp and iso_day(stamp):
+            node = repo.get(f'n{n}') if isinstance(repo, dict) else None
+            stamp = node.get('createdAt') if isinstance(node, dict) else None  # any non-dict node is a missing number
+            if isinstance(stamp, str) and iso_day(stamp):
                 out[n] = stamp
         return out
 
