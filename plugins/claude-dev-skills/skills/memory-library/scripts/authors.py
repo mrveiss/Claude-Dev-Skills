@@ -22,8 +22,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _lib  # noqa: E402
 
-# `ledger sessions` row: name, liveness text, then the `sid <hex>` column (two or more spaces before it)
-ROW_RE = re.compile(r'^(\S+)\s+(?:(?!\bsid\b).)*?\s{2,}sid\s+([0-9a-f]{8,})(?=\s|$)')
+HEX_RE = re.compile(r'[0-9a-f]{8,}')  # a sid shorter than MIN_SID is never a mapping
 UNSAFE_CMD_RE = re.compile(r'[;|&<>$`\\"\'(){}*?!#\[\]\n]')
 MIN_SID = 8  # a recorded sid prefix shorter than this is not distinctive enough to match on
 
@@ -47,8 +46,22 @@ def ledger_sessions(cfg, notes):
     if done is None or done.returncode != 0:
         notes.append('ledger sessions failed: sessions are not resolved')
         return None
-    rows = [m.groups() for m in map(ROW_RE.match, done.stdout.splitlines()) if m]
+    rows = [row for row in map(parse_row, done.stdout.splitlines()) if row]
     return [(name, sid) for name, sid in rows if len(sid) >= MIN_SID]
+
+
+def parse_row(line):
+    """(name, sid) from a `ledger sessions` row, or None.
+
+    By tokens, not spacing: the name is the first token, the sid is the token right after the first
+    token that is exactly `sid` (so `sidecar` never counts). Liveness text such as `idle 2947m` or
+    `no beat` varies in width, which is why spacing cannot be relied on.
+    """
+    tokens = line.split()
+    if len(tokens) < 3 or 'sid' not in tokens[1:-1]:
+        return None
+    sid = tokens[tokens.index('sid', 1) + 1]
+    return (tokens[0], sid) if HEX_RE.fullmatch(sid) else None
 
 
 def ledger_name(rows, origin):

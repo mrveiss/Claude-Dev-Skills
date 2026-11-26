@@ -9,7 +9,7 @@ import unittest
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from test_dates import make, fake_gh, run, write  # noqa: E402
-from test_memory_library import sha_tree  # noqa: E402
+from test_memory_library import SCRIPTS, sha_tree  # noqa: E402
 
 LEDGER = f'''#!{sys.executable}
 print("autobot-ai-m2      no beat    sid abcd1234  socket 1.sock    seen 11-19 00:41")
@@ -17,6 +17,9 @@ print("autobot-ai-old     no beat    sid 11112222  socket 2.sock    seen 11-19 0
 print("autobot-ai-bad     no beat    socket 99998888.sock seen 11-19 00:41  (was sidecar 77776666)")
 print("autobot-ai-twin    no beat    sid 33334444  socket 3.sock    seen 11-19 00:41")
 print("autobot-ai-twin2   no beat    sid 33334444  socket 4.sock    seen 11-19 00:41")
+print("autobot-ai-live    idle 2947m sid 55556666  socket 5.sock    seen 11-24 23:14")
+print("session-55556666   no beat    sid 55556666  socket 5.sock    seen 11-17 16:32")
+print("autobot-ai-busy    alive      sid 77778888  socket 6.sock    seen 11-26 17:43")
 '''
 SESSIONS = {  # fact -> (frontmatter lines, expected author, expected source)
     'a_front.md': ('author: carol\noriginSessionId: abcd1234-0000-0000-0000-000000000000\n', 'carol', 'frontmatter'),
@@ -122,6 +125,25 @@ class WithoutLedger(unittest.TestCase):
             self.assertEqual(sha_tree(mem, only_root=True), before)
         finally:
             shutil.rmtree(tmp)
+
+    def test_parse_row_is_by_tokens_not_spacing(self):
+        sys.path.insert(0, SCRIPTS)
+        import authors
+        self.assertEqual(authors.parse_row('autobot-ai-m3d     idle 2947m sid ba7cc21b  socket 418170.sock  seen 11-24 23:14'), ('autobot-ai-m3d', 'ba7cc21b'))
+        self.assertEqual(authors.parse_row('autobot-ai-busy    alive      sid 77778888  socket 6.sock'), ('autobot-ai-busy', '77778888'))
+        self.assertIsNone(authors.parse_row('autobot-ai-bad     no beat    socket 99998888.sock seen 11-19 00:41  (was sidecar 77776666)'))
+        self.assertIsNone(authors.parse_row('x sid'))
+        self.assertIsNone(authors.parse_row('short          no beat    sid abc123  socket 1.sock'))
+        self.assertEqual(authors.parse_row('hexcol   no beat  deadbeefcafe  sid 99990000  socket 7.sock'), ('hexcol', '99990000'))
+        rows = [('autobot-ai-p', '12345678')]
+        self.assertEqual(authors.ledger_name(rows, '12345678-aaaa-4bbb-8ccc-000000000000'), 'autobot-ai-p')
+
+    def test_named_and_auto_named_rows_sharing_a_sid_stay_unrecorded(self):
+        sys.path.insert(0, SCRIPTS)
+        import authors
+        rows = [('autobot-ai-live', '55556666'), ('session-55556666', '55556666'), ('autobot-ai-busy', '77778888')]
+        self.assertIsNone(authors.ledger_name(rows, '55556666-0000-4000-8000-000000000000'))
+        self.assertEqual(authors.ledger_name(rows, '77778888-0000-4000-8000-000000000000'), 'autobot-ai-busy')
 
     def test_ledger_command_not_found(self):
         self.check('not found')
