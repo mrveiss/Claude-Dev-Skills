@@ -4,6 +4,8 @@
  "github_repo": "owner/name",
  "_timezone": "Optional IANA zone name; the day a session, issue or file time falls on is computed in it. Omit it to use the machine's local zone.",
  "timezone": "Europe/Riga",
+ "_ledger_cmd": "Optional command (name on PATH or a path) whose `sessions` output maps ledger names to session ids; authors.py uses it to attribute facts by originSessionId. Omit it and those facts stay unrecorded.",
+ "ledger_cmd": "ledger",
  "rooms": {
   "REF": {
    "dir": "reference",

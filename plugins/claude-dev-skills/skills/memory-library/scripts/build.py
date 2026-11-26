@@ -5,6 +5,8 @@ usage: python3 -I build.py <memory-dir> <shelf>      (shelf = code or name from 
 
 Reads <memory-dir>/library/classes.json and the shelf's source topic file; writes chapters
 and CARD.md under <memory-dir>/library/. Idempotent; never touches a fact file.
+Entries linking to a URL are shelved like any line but are never fact files (not counted missing).
+Books use library/authors.json (written by authors.py) when present.
 """
 import collections
 import os
@@ -23,10 +25,10 @@ def entries(mem, shelf):
         return [ln.rstrip('\n') for ln in fh if ln.startswith('- [')]
 
 
-def pick_author(mem, shelf, line, fact):
-    """Frontmatter author wins; else the first author whose match rules hit; else default."""
+def pick_author(mem, shelf, line, fact, table):
+    """Frontmatter author wins, then the one authors.json records; else the first match rule that hits; else default."""
     if fact:
-        fm = _lib.frontmatter(os.path.join(mem, fact)).get('author')
+        fm = _lib.frontmatter(os.path.join(mem, fact)).get('author') or _lib.recorded_author(table, fact)
         if fm:
             return _lib.slug(fm)
     for name, spec in shelf.get('authors', {}).items():
@@ -47,12 +49,13 @@ def pick_chapter(shelf, line):
 def classify(mem, shelf):
     books = collections.defaultdict(lambda: collections.defaultdict(list))
     missing = []
+    table = _lib.load_authors(mem)
     for line in entries(mem, shelf):
         fact = _lib.fact_name(line)
         if fact and not os.path.exists(os.path.join(mem, fact)):
             missing.append(fact)
         ch = pick_chapter(shelf, line)
-        books[pick_author(mem, shelf, line, fact)][ch['key']].append(line)
+        books[pick_author(mem, shelf, line, fact, table)][ch['key']].append(line)
     return books, missing
 
 

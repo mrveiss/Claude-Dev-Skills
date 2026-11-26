@@ -82,7 +82,7 @@ def chapter_rows(mem, cfg, table, rcode, scode, sname, rdir, author):
         title = next((ln.lstrip('# ') for ln in lines if ln.startswith('# ')), name)
         ccode = chapter_code(shelf_cfg, name[:-3])
         for ln in (x for x in lines if x.startswith('- [')):
-            fact = os.path.basename(_lib.LINK_RE.search(ln).group(1)) if _lib.LINK_RE.search(ln) else None
+            fact = _lib.fact_name(ln)
             info = entry_date(table, ln, fact)
             t = re.match(r'- \[([^\]]*)\]', ln)
             out.append(Row(rcode, scode, author, ccode, title, path, ln,
@@ -142,6 +142,16 @@ def issue_groups(r):
     return sorted({f'{int(n) // 1000}xxx' for n in _lib.REF_RE.findall(r.line)})
 
 
+def author_summary(mem, rows):
+    """Lines saying how many entries have a recorded author (authors.json) and how many are unrecorded."""
+    table = _lib.load_authors(mem)
+    if not table:
+        return [f'{_lib.AUTHORS_FILE} is absent (run authors.py): every author is counted unrecorded.', '']
+    named = [_lib.recorded_author(table, r.fact) for r in rows]
+    done = [a for a in named if a]
+    return [f'Authors resolved: {len(set(done))} ({len(done)} entries); unrecorded: {len(named) - len(done)} entries.', '']
+
+
 def write_topic_author(mem, cfg, cat, rows):
     rooms = cfg['rooms']
     out = [_lib.GENERATED, '# Catalogue: by topic', '', '| Shelf | Card | Authors | Entries |', '|---|---|---|---|']
@@ -151,7 +161,7 @@ def write_topic_author(mem, cfg, cat, rows):
         card = f'../{rooms[sh["room"]]["dir"]}/{sh["name"]}/CARD.md'
         out.append(f'| {scode} {sh["title"]} | [CARD]({card}) | {", ".join(sorted({r.author for r in rs}))} | {len(rs)} |')
     _lib.write_text(mem, os.path.join(cat, 'by-topic.md'), '\n'.join(out) + '\n')
-    out = [_lib.GENERATED, '# Catalogue: by author', '', 'One book = one author on one shelf.', '']
+    out = [_lib.GENERATED, '# Catalogue: by author', '', 'One book = one author on one shelf.', ''] + author_summary(mem, rows)
     for a in sorted({r.author for r in rows}):
         out += [f'## {a}', '', '| Call prefix | Chapter | Entries |', '|---|---|---|']
         keys = sorted({(r.room, r.shelf, r.chapter, r.ctitle, r.cpath) for r in rows if r.author == a})

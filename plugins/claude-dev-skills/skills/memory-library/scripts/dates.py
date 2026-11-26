@@ -6,8 +6,8 @@ usage: python3 -I dates.py <memory-dir>
 Precedence per fact: created: (exact) -> a date in the entry (exact) -> originSessionId's
 session start (near-exact) -> cited issue/PR #N (not-before, with modified: as not-after)
 -> file time (approximate; a bulk-copy day is unknown) -> unknown. Output is
-{fact: {date, source, quality, ...}}. Never edits a fact file. Issue/PR dates come from
-`gh api` for the `github_repo` in classes.json, cached in library/ref-dates.json.
+{fact: {date, source, quality, ...}}. Entries linking to a URL are not facts and get no row. Never edits a fact file. Issue/PR dates come from
+batched `gh api graphql` queries for the `github_repo` in classes.json, cached in library/ref-dates.json.
 Day boundaries use `timezone` (IANA name) from classes.json, else the machine's local zone.
 Env MEMORY_LIBRARY_HOME replaces the home directory (session transcripts, history.jsonl).
 """
@@ -24,6 +24,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _lib  # noqa: E402
 
+BATCH = 50  # issueOrPullRequest fields per GraphQL query
+REPO_RE = re.compile(r'^[\w.-]+/[\w.-]+$')
 TS_RE = re.compile(r'"timestamp":\s*"([^"]+)"')
 
 
@@ -101,23 +103,40 @@ class RefDates:
         return {}
 
     def get(self, number):
-        known = self.cache.setdefault(self.repo, {})
-        if str(number) not in known:
-            created = self.fetch(number)
-            if created:
-                known[str(number)] = created
-            else:
-                self.failed += 1
-        return known.get(str(number))
+        """Cached creation stamp, or None: lookups happen only in prefetch()."""
+        return self.cache.get(self.repo, {}).get(str(number))
 
-    def fetch(self, number):
+    def prefetch(self, numbers):
+        """Fetch every uncached number in GraphQL batches; a number the response lacks counts as failed."""
+        known = self.cache.setdefault(self.repo, {})
+        todo = sorted({int(n) for n in numbers if str(int(n)) not in known})
+        for i in range(0, len(todo), BATCH):
+            batch = todo[i:i + BATCH]
+            found = self.fetch(batch)
+            for n in batch:
+                if n in found:
+                    known[str(n)] = found[n]
+                else:
+                    self.failed += 1
+
+    def fetch(self, batch):
+        """{number: created stamp} for the numbers one query answered; argv only, numbers are ints."""
+        owner, name = self.repo.split('/', 1)
+        fields = ' '.join(f'n{n}: issueOrPullRequest(number: {int(n)}) {{ ... on Issue {{ createdAt }} '
+                          f'... on PullRequest {{ createdAt }} }}' for n in batch)
+        query = f'query($owner: String!, $name: String!) {{ repository(owner: $owner, name: $name) {{ {fields} }} }}'
         try:
-            done = subprocess.run(['gh', 'api', f'repos/{self.repo}/issues/{number}', '--jq', '.created_at'],
-                                  capture_output=True, text=True, timeout=30)
-        except (OSError, subprocess.TimeoutExpired):
-            return None
-        stamp = done.stdout.strip()
-        return stamp if done.returncode == 0 and iso_day(stamp) else None
+            done = subprocess.run(['gh', 'api', 'graphql', '-f', f'query={query}', '-f', f'owner={owner}',
+                                   '-f', f'name={name}'], capture_output=True, text=True, timeout=120)
+            repo = (json.loads(done.stdout).get('data') or {}).get('repository') or {}
+        except (OSError, subprocess.TimeoutExpired, ValueError, AttributeError):
+            return {}
+        out = {}
+        for n in batch:  # gh exits non-zero when one number is missing; the others in the response are still good
+            stamp = (repo.get(f'n{n}') or {}).get('createdAt')
+            if stamp and iso_day(stamp):
+                out[n] = stamp
+        return out
 
     def save(self):
         _lib.write_text(self.mem, self.path, json.dumps(self.cache, indent=1, sort_keys=True) + '\n')
@@ -127,6 +146,8 @@ def ref_source(mem, cfg, notes):
     """A RefDates, or None (with the reason in notes) when gh or github_repo is missing."""
     if not cfg.get('github_repo'):
         notes.append('issue/PR source skipped: no github_repo in classes.json')
+    elif not REPO_RE.match(cfg['github_repo']):
+        notes.append('issue/PR source skipped: github_repo is not owner/name')
     elif not shutil.which('gh'):
         notes.append('issue/PR source skipped: gh not found on PATH')
     else:
@@ -182,7 +203,10 @@ def modified_day(value, tz):
 def resolve(mem, cfg, refs=None, sessions=False):
     """{fact: info}. refs (a RefDates) and sessions=True enable the two non-local sources."""
     table, files, tz = {}, {}, _lib.zone(cfg)
-    for fact, lines in sorted((f, l) for f, l in _lib.source_lines(mem, cfg).items() if f):
+    source = sorted((f, l) for f, l in _lib.source_lines(mem, cfg).items() if f)  # external entries have no fact
+    if refs:
+        refs.prefetch({n for f, l in source for n in cited(mem, f, l)})
+    for fact, lines in source:
         fm = _lib.frontmatter(os.path.join(mem, fact))
         info = _lib.exact_date(fm, lines)
         sid = fm.get('originSessionId')
