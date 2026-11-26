@@ -9,6 +9,7 @@ One data file per memory dir; start from `references/classes.example.json` (shel
 | Key | Meaning |
 |---|---|
 | `rooms` | `{CODE: {dir, title}}`, e.g. `REF` -> `reference` |
+| `ledger_cmd` | Optional ledger command (on PATH or a path); `<cmd> sessions` maps names to session ids, env `MEMORY_LIBRARY_LEDGER` overrides. Used only by `authors.py`; omit it and sessions stay unrecorded. It is **executed** (as argv, no shell), so it must be a trusted local command; an empty value or one with shell metacharacters is refused |
 | `shelves` | `{CODE: {name, title, room, source, default_author, authors, chapters, other}}` |
 | `shelves.*.source` | Flat topic list to shelve, relative to `<mem>` (`topics/ci-merge.md`) |
 | `shelves.*.authors` | `{author: {label, match: {file, line}}}`; regex on fact file name or entry line; first match wins |
@@ -17,7 +18,7 @@ One data file per memory dir; start from `references/classes.example.json` (shel
 
 - Add a class: add an entry under `shelves` with a short readable uppercase code (`CI`, `GIT`, `TEST`), then run `shelving.md`.
 - Codes are part of every call number, so never reuse or rename one once catalogued (old references would dangle).
-- A fact's own `author:` frontmatter beats the `authors` match rules (the writer knows best).
+- A fact's own `author:` frontmatter beats the author `authors.json` records (ledger name for its `originSessionId`), which beats the `authors` match rules.
 
 ## Facet order (fixed)
 

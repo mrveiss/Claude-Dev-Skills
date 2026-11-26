@@ -22,4 +22,4 @@ Rules that hold without loading a reference:
 - One book, one author; write only in your own book (a mixed book hides who said what).
 - Never hand-edit `library/catalog/**`, cards or generated chapters (they are rebuilt and your edit is lost).
 - A skill has one job and a subject has one home; a new skill or a fact shared with another skill follows `/claude-dev-skills:coding skill-structure` (this skill links to it and does not restate it).
-- `build.py`, `dates.py` and `catalog.py` never create, change or delete a fact file at the memory root (facts are the record; the library is a view).
+- `build.py`, `authors.py`, `dates.py` and `catalog.py` never create, change or delete a fact file at the memory root (facts are the record; the library is a view).
