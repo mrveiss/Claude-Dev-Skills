@@ -86,11 +86,19 @@ def collect(roots, min_words):
     return items
 
 
-def similarity(a, b):
+def similarity(a, b, threshold=0.0):
+    """Word-level similarity of two normalised paragraphs, 0.0 when it cannot reach *threshold*.
+
+    Words, not characters, keep SequenceMatcher's sequences short; the length bound and the
+    two quick ratios are cheap upper bounds, so most pairs never reach ratio().
+    """
     if a == b:
         return 1.0
-    sm = difflib.SequenceMatcher(None, a, b, autojunk=False)
-    if sm.quick_ratio() < 0.5:
+    wa, wb = a.split(), b.split()
+    if 2 * min(len(wa), len(wb)) / (len(wa) + len(wb)) < threshold:
+        return 0.0
+    sm = difflib.SequenceMatcher(None, wa, wb, autojunk=False)
+    if sm.real_quick_ratio() < threshold or sm.quick_ratio() < threshold:
         return 0.0
     return sm.ratio()
 
@@ -100,7 +108,7 @@ def find_overlaps(items, threshold):
     for a, b in combinations(items, 2):
         if a[0] == b[0]:
             continue
-        ratio = similarity(a[3], b[3])
+        ratio = similarity(a[3], b[3], threshold)
         if ratio >= threshold:
             found.append((ratio, a, b))
     return sorted(found, key=lambda r: -r[0])
