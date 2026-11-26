@@ -31,7 +31,7 @@ Run the checker (read-only, stdlib only):
 python3 <plugin>/skills/coding/scripts/skill_overlap.py <plugin-or-skills-root> [<root> ...] [--threshold 0.85] [--within-skill]
 ```
 
-It normalises paragraphs (frontmatter and code fences skipped; case, punctuation and whitespace folded) and reports pairs from different skills at or above the threshold, with `file:line` on both sides. Paragraphs under 8 words are ignored. A skill's own name (`plugin:skill`, or a hyphenated bare name) is masked before comparing, and a paragraph holding its own `/plugin:skill` command is its usage line and is skipped, so a skill naming itself is never a finding. `--within-skill` (opt-in) also compares different files of the same skill (SKILL.md vs a reference, reference vs reference). For each finding:
+It normalises paragraphs (frontmatter and code fences skipped; case, punctuation and whitespace folded) and reports pairs from different skills at or above the threshold, with `file:line` on both sides. Paragraphs under 8 words are ignored. A skill's own name (`plugin:skill`, or a hyphenated bare name) is masked before comparing; the sentence holding its own `/plugin:skill` command (a bare `/name` is not a command) is its usage statement and is removed, and a paragraph left under 8 words is dropped, so a skill naming itself is never a finding while a real rule next to the command still is. `--within-skill` (opt-in) also compares different files of the same skill (SKILL.md vs a reference, reference vs reference). For each finding:
 
 1. **Decide the home** by asking which skill's job the passage is. The home keeps the text.
 2. **Replace the other copy with a link** to the home reference, plus at most one sentence of context.

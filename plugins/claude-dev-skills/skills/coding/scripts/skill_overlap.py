@@ -8,10 +8,13 @@ A skill is a directory holding SKILL.md; its files are SKILL.md plus references/
 Paragraphs are normalised (lowercase, punctuation and whitespace folded) and compared
 with difflib across DIFFERENT skills only. YAML frontmatter and fenced code blocks are
 skipped: frontmatter is metadata unique to each skill, and code fences are examples
-that legitimately repeat. Before comparing, each skill's own name (and its plugin-qualified
-form plugin:skill) is replaced by a placeholder, and a paragraph holding the skill's own slash
-command (/plugin:skill) is that skill's usage line and is not compared at all. --within-skill also compares files of the
-SAME skill. Exit 0 = no findings, 1 = findings, 2 = bad arguments.
+that legitimately repeat. Before comparing, each skill's own name (plugin:skill, or a
+hyphenated bare name) and its own /plugin:skill command with its arguments are replaced by a
+placeholder, so lines differing only by the skill naming itself match. The sentence holding
+the command is the usage statement and is removed; a paragraph left with fewer than
+--min-words words is dropped.
+--within-skill also compares files of the SAME skill.
+Exit 0 = no findings, 1 = findings, 2 = bad arguments.
 """
 import argparse
 import difflib
@@ -27,20 +30,22 @@ PLACEHOLDER = 'skillname'
 
 
 def name_patterns(name):
-    """(invocation, mention) regexes for a skill naming itself.
+    """(command, mention) regexes for a skill naming itself.
 
-    invocation: the slash command, /name or /plugin:name. A paragraph holding one is that
-    skill's own usage line (one per skill by construction), so it is left out of comparison.
-    mention: plugin:name, or a hyphenated bare name; replaced by a placeholder so a copied
-    paragraph that merely says which skill it sits in still matches. A one-word name such
-    as `review` is an ordinary word and is only masked in the plugin:name form.
+    command: the plugin-qualified slash command /plugin:name with its arguments, either a
+    backticked span (`/plugin:name <x> [args]`) or the command plus trailing <x>/[x] tokens.
+    A bare /name is not a command (it is also a path or a word) and is not matched.
+    mention: plugin:name, or a hyphenated bare name. Both are replaced by a placeholder so a
+    copied paragraph that merely says which skill it sits in still matches. A one-word name
+    such as `review` is an ordinary word and is only masked in the plugin:name form.
     """
     n = re.escape(name)
-    invocation = re.compile(r'(?<![\w-])/(?:[\w.-]+:)?%s(?![\w-])' % n, re.IGNORECASE)
+    q = r'/[\w.-]+:%s(?![\w-])' % n
+    command = re.compile(r'`%s[^`]*`|%s(?:\s*(?:\[[^\]]*\]|<[^>]*>))*' % (q, q), re.IGNORECASE)
     prefixed = r'(?<![\w-])[\w.-]+:%s(?![\w-])' % n
     bare = r'(?<![\w-])%s(?![\w-])' % n
     mention = re.compile(bare if '-' in name else prefixed, re.IGNORECASE)
-    return invocation, mention
+    return command, mention
 
 
 def find_skills(root):
@@ -61,6 +66,23 @@ def normalise(text):
     return ' '.join(re.sub(r'[^\w\s]', ' ', text.lower()).split())
 
 
+def usage_stripped(text, own, min_words):
+    """Mask the skill's own name in *text*; None when the paragraph is only a usage line.
+
+    The sentence holding the skill's own command is the usage statement (the command, its
+    arguments and what no argument does), which is one per skill by construction, so it is
+    removed; the other sentences are real content and are compared. A paragraph left with
+    fewer than *min_words* words is dropped.
+    """
+    text, n_cmd = own[0].subn(PLACEHOLDER, text)
+    if n_cmd:
+        keep = [x for x in re.split(r'(?<=[.!?])\s+', text) if PLACEHOLDER not in x]
+        text = ' '.join(keep)
+        if len(normalise(text).split()) < min_words:
+            return None
+    return own[1].sub(PLACEHOLDER, text)
+
+
 def paragraphs(path, min_words, own_name=None):
     """Yield (start_line, normalised_text) for prose paragraphs, skipping frontmatter and fences.
 
@@ -77,10 +99,12 @@ def paragraphs(path, min_words, own_name=None):
     def flush():
         if buf:
             joined = ' '.join(buf)
-            if own and own[0].search(joined):
-                buf.clear()
-                return
-            text = normalise(own[1].sub(PLACEHOLDER, joined) if own else joined)
+            if own:
+                joined = usage_stripped(joined, own, min_words)
+                if joined is None:
+                    buf.clear()
+                    return
+            text = normalise(joined)
             if len(text.split()) >= min_words:
                 out.append((start, text))
         buf.clear()

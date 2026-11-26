@@ -57,7 +57,7 @@ class SkillOverlapTest(unittest.TestCase):
             self.assertEqual(code, 0)
 
     def test_invocation_lines_differing_only_by_own_name_not_reported(self):
-        line = 'Invoke as `/my-plugin:%s [args]`; no argument means apply it to the situation at hand.'
+        line = 'Invoke as `/my-plugin:%s [args]`; no argument means apply it to the situation.'
         with tempfile.TemporaryDirectory() as t:
             make_skill(t, 'alpha-one', line % 'alpha-one')
             make_skill(t, 'beta-two', line % 'beta-two')
@@ -65,8 +65,25 @@ class SkillOverlapTest(unittest.TestCase):
             self.assertEqual(code, 0)
             self.assertIn('0 finding(s)', out)
 
+    def test_rule_next_to_own_command_still_reported(self):
+        rule = ('Always read the existing helper before writing a new one, because a second copy of the '
+                'same logic drifts and nobody can tell which copy is current in this repository.')
+        with tempfile.TemporaryDirectory() as t:
+            make_skill(t, 'alpha', 'Use `/p:alpha [args]` now. ' + rule)
+            make_skill(t, 'beta', 'Use `/p:beta [args]` now. ' + rule)
+            code, out = run(t)
+            self.assertEqual(code, 1)
+            self.assertIn('1 finding(s)', out)
+
+    def test_bare_slash_name_is_not_a_command(self):
+        line = 'For anything about quality of the change, see /%s before you ask for a second opinion.'
+        with tempfile.TemporaryDirectory() as t:
+            make_skill(t, 'review', line % 'review')
+            make_skill(t, 'other', line % 'review')
+            self.assertEqual(run(t)[0], 1)
+
     def test_single_word_names_usage_line_not_reported(self):
-        line = 'Invoke as `/my-plugin:%s [args]`; no argument means apply it to the situation at hand.'
+        line = 'Invoke as `/my-plugin:%s [args]`; no argument means apply it to the situation.'
         with tempfile.TemporaryDirectory() as t:
             make_skill(t, 'alpha', line % 'alpha')
             make_skill(t, 'beta', line % 'beta')
