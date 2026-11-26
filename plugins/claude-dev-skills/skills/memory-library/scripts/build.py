@@ -2,6 +2,12 @@
 """Shelve one flat topic list into a library shelf.
 
 usage: python3 -I build.py <memory-dir> <shelf>      (shelf = code or name from classes.json)
+       python3 -I build.py <memory-dir> --fact <file>  (one new fact: incremental, see below)
+
+--fact finds the shelf whose source lists the fact, rewrites only that fact's chapter and
+the shelf card, then re-renders only the catalogue groups listing it (catalog.py --fact).
+The result is byte-identical to a full build + catalog run. After editing classes.json run
+the full build instead.
 
 Reads <memory-dir>/library/classes.json and the shelf's source topic file; writes chapters
 and CARD.md under <memory-dir>/library/. Idempotent; never touches a fact file.
@@ -128,7 +134,34 @@ def elsewhere(shelf, books, meta):
     return {room: f'{n} entries moved out of the shelf room' for room, n in counts.items()}
 
 
+def shelf_of_fact(mem, cfg, fact):
+    for code, shelf in cfg['shelves'].items():
+        src = os.path.join(mem, shelf['source'])
+        if os.path.isfile(src) and any(fact_name(ln) == fact for ln in entries(mem, shelf)):
+            return code, shelf
+    _lib.die(f'{fact} is not linked from any shelf source in classes.json')
+
+
+def build_fact(mem, cfg, fact):
+    code, shelf = shelf_of_fact(mem, cfg, fact)
+    books, _ = classify(mem, shelf)
+    meta = chapter_meta(shelf)
+    for author, chs in books.items():
+        for key, items in chs.items():
+            if any(fact_name(ln) == fact for ln in items):
+                write_chapter(mem, cfg, code, shelf, author, meta[key], items)
+    write_card(mem, cfg, code, shelf, books, meta)
+    print(f'shelf {code}: rebuilt the chapter of {fact} and the card')
+
+
 def main(argv):
+    if len(argv) == 4 and argv[2] == '--fact':
+        mem = os.path.abspath(argv[1])
+        cfg = _lib.load_classes(mem)
+        build_fact(mem, cfg, os.path.basename(argv[3]))
+        import catalog
+        catalog.regenerate(mem, cfg, os.path.basename(argv[3]))
+        return
     if len(argv) != 3:
         _lib.die(__doc__)
     mem, ref = os.path.abspath(argv[1]), argv[2]

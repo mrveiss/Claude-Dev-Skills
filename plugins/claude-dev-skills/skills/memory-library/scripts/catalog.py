@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Regenerate the lookup catalogues under <memory-dir>/library/catalog/.
 
-usage: python3 -I catalog.py <memory-dir>
+usage: python3 -I catalog.py <memory-dir> [--fact <file>]
+
+--fact re-renders only the group files that list that fact (plus the index files); it is
+byte-identical to a full run. If the fact changes which days count as bulk copies, every
+group is re-rendered, because other entries' dates moved too.
 
 Catalogues: by topic, author, date created, title A-Z, kind, issue/PR. Every line carries
 its call number (room.shelf/author/chapter/date). Idempotent; never touches a fact file.
@@ -55,7 +59,7 @@ def collect(mem, cfg):
         for sname, scode in sorted(shelves.items()):
             for author in sorted(_subdirs(os.path.join(lib, rdir, sname))):
                 rows += chapter_rows(mem, cfg, rcode, scode, sname, rdir, author)
-    return apply_bulk_rule(rows)
+    return rows
 
 
 def _subdirs(path):
@@ -84,9 +88,13 @@ def chapter_rows(mem, cfg, rcode, scode, sname, rdir, author):
     return out
 
 
-def apply_bulk_rule(rows):
+def bulk_days(rows):
     per_day = collections.Counter(r.date for r in rows if r.src == 'file')
-    bulk = {d for d, n in per_day.items() if n >= _lib.BULK_THRESHOLD}
+    return {d for d, n in per_day.items() if n >= _lib.BULK_THRESHOLD}
+
+
+def apply_bulk_rule(rows):
+    bulk = bulk_days(rows)
     return [r._replace(date='unknown', src='bulk') if r.src == 'file' and r.date in bulk else r
             for r in rows]
 
@@ -103,7 +111,9 @@ def entry_line(mem, r, frm, prefix=''):
     return f'- `{call(r)}` · {prefix}' + _lib.relink(r.line, mem, frm)[2:]
 
 
-def grouped(mem, cat, name, title, note, rows, keyf, label=lambda g: g, sortf=order):
+def grouped(mem, cat, name, title, note, rows, keyf, label=lambda g: g, sortf=order, touched=None):
+    """touched: rows whose groups to render; None renders every group."""
+    only = None if touched is None else {g for r in touched for g in keyf(r)}
     d = os.path.join(cat, name)
     groups = collections.defaultdict(list)
     for r in rows:
@@ -113,12 +123,15 @@ def grouped(mem, cat, name, title, note, rows, keyf, label=lambda g: g, sortf=or
     keep = set()
     for g in sorted(groups, key=str):
         fn = re.sub(r'[^A-Za-z0-9_-]', '_', str(g)) + '.md'
+        keep.add(os.path.join(d, fn))
+        idx.append(f'| [{label(g)}]({name}/{fn}) | {len(groups[g])} |')
+        if only is not None and g not in only:
+            continue
         body = [_lib.GENERATED, f'# {title}: {label(g)}', '', f'{len(groups[g])} entries.', '']
         body += [entry_line(mem, r, d) for r in sorted(groups[g], key=sortf)]
-        keep.add(os.path.join(d, fn))
         _lib.write_text(mem, os.path.join(d, fn), '\n'.join(body) + '\n')
-        idx.append(f'| [{label(g)}]({name}/{fn}) | {len(groups[g])} |')
-    _lib.prune_generated(mem, d, keep)
+    if only is None:
+        _lib.prune_generated(mem, d, keep)
     _lib.write_text(mem, os.path.join(cat, name + '.md'), '\n'.join(idx) + '\n')
 
 
@@ -162,31 +175,47 @@ def write_topic_author(mem, cfg, cat, rows):
     _lib.write_text(mem, os.path.join(cat, 'by-author.md'), '\n'.join(out))
 
 
-def write_by_date(mem, cat, rows):
+def write_by_date(mem, cat, rows, touched=None):
     note = ('Date = created: in the fact frontmatter, else a date written in the entry, else the '
             'fact file time, shown with a leading ~ (approximate: a copy or restore resets file '
             f'times). A day shared by {_lib.BULK_THRESHOLD} or more file-dated entries is a bulk '
             'copy; those entries are listed as unknown.')
     grouped(mem, cat, 'by-date', 'date created', note, rows,
             lambda r: [r.date[:7] if r.date != 'unknown' else 'unknown'],
-            sortf=lambda r: (r.date, order(r)))
+            sortf=lambda r: (r.date, order(r)), touched=touched)
+
+
+def regenerate(mem, cfg, fact=None):
+    """Write the catalogues; with fact, render only the groups listing it (see module doc)."""
+    raw = collect(mem, cfg)
+    rows = apply_bulk_rule(raw)
+    touched = None
+    if fact:
+        touched = [r for r in rows if r.fact == fact]
+        if not touched:
+            _lib.die(f'{fact} is not listed in any chapter; run build.py --fact first')
+        if bulk_days(raw) != bulk_days([r for r in raw if r.fact != fact]):
+            touched = None
+    cat = os.path.join(mem, 'library', 'catalog')
+    write_topic_author(mem, cfg, cat, rows)
+    write_by_date(mem, cat, rows, touched)
+    grouped(mem, cat, 'by-title', 'title A-Z', 'Entry titles, one file per first letter.',
+            rows, first_letter, sortf=lambda r: (r.title.lower(), order(r)), touched=touched)
+    grouped(mem, cat, 'by-kind', 'kind', 'feedback, gotcha, project, reference or user (frontmatter type, else file prefix).',
+            rows, lambda r: kind(mem, r), touched=touched)
+    grouped(mem, cat, 'by-issue', 'issue or PR', 'Entries naming an issue or PR, grouped per thousand.',
+            rows, issue_groups, label=lambda g: f'#{g}', touched=touched)
+    return rows
 
 
 def main(argv):
-    if len(argv) != 2:
+    fact = None
+    if len(argv) == 4 and argv[2] == '--fact':
+        fact = os.path.basename(argv[3])
+    elif len(argv) != 2:
         _lib.die(__doc__)
     mem = os.path.abspath(argv[1])
-    cfg = _lib.load_classes(mem)
-    rows = collect(mem, cfg)
-    cat = os.path.join(mem, 'library', 'catalog')
-    write_topic_author(mem, cfg, cat, rows)
-    write_by_date(mem, cat, rows)
-    grouped(mem, cat, 'by-title', 'title A-Z', 'Entry titles, one file per first letter.',
-            rows, first_letter, sortf=lambda r: (r.title.lower(), order(r)))
-    grouped(mem, cat, 'by-kind', 'kind', 'feedback, gotcha, project, reference or user (frontmatter type, else file prefix).',
-            rows, lambda r: kind(mem, r))
-    grouped(mem, cat, 'by-issue', 'issue or PR', 'Entries naming an issue or PR, grouped per thousand.',
-            rows, issue_groups, label=lambda g: f'#{g}')
+    rows = regenerate(mem, _lib.load_classes(mem), fact)
     print(f'rows {len(rows)}; dated from file {sum(r.src == "file" for r in rows)}; '
           f'unknown {sum(r.date == "unknown" for r in rows)}')
 

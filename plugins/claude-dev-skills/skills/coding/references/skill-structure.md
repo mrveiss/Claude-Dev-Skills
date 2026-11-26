@@ -9,8 +9,9 @@ Skills follow the same library structure as memory: a subject has exactly one ho
 1. **One job per skill.** Each skill does one unique job. If you cannot state the job in one sentence without "and", split it.
 2. **Shared content has exactly one home skill.** When part of one skill becomes similar to part of another, the shared part is not kept in both. Pick the skill whose job it is, keep it there, and make the other skill link to it. Duplicated text drifts, and the model cannot tell which copy is current.
 3. **A meta-skill composes two or more skills.** It links to them and says how and in what order (and under what conditions) to use them. It never copies their instructions.
+4. **An agent is the specialist who knows which skill to use and when.** It holds no skill content: it names the skill or meta-skill to use for each condition, plus its tools and model. Where an agent definition contains skill instructions, move them to the home skill (rule 2) and leave a "use `<skill>` when `<condition>`" line in the agent. Owner rule (2026-11-26).
 
-Owner's example: the skills are *operate a table saw*, *use measuring instruments*, *read furniture designs*, *glue pieces together*, *screw pieces together*. The meta-skill *build furniture* says which of those to use, how, and in what order: read the design, measure, cut on the saw, then glue or screw. It does not explain how to run a saw.
+Owner's example: the skills are *operate a table saw*, *use measuring instruments*, *read furniture designs*, *glue pieces together*, *screw pieces together*. The meta-skill *build furniture* says which of those to use, how, and in what order: read the design, measure, cut on the saw, then glue or screw. It does not explain how to run a saw. The agents are the carpenters: the *carpenter* agent (tools, model) knows to use *build furniture* when asked for a cabinet and *operate a table saw* when asked only to cut a board; it holds neither skill's steps.
 
 ## Router skill vs meta-skill
 

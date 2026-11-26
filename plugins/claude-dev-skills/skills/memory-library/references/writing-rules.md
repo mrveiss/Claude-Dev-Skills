@@ -18,5 +18,5 @@ When to use: creating or changing a memory fact, promoting a finding, or retirin
 - **Promotion into the owner book needs the owner's approval** (the owner book outranks all others); mark the session entry as moved, never silently copy.
 - **Superseded rules go to the archive room** (the live chapter keeps only the current rule); the archived entry names its replacement.
 - Facts are never deleted by build or catalog; deleting or rewriting stored memory stays a human-approved act.
-- Index it: add the one-line pointer to the matching `topics/*.md` (see `coding` -> `memory-cleanup`), then run `shelving.md` step 3.
+- Index it: add the one-line pointer to the matching `topics/*.md` (see `coding` -> `memory-cleanup`), then run the incremental build for the new fact (`--fact`; when to use it and when a full build is needed: `shelving.md`).
 - Exempt from the hook: `MEMORY.md`, `topics/**`, `library/**`, and edits to files that already exist.
