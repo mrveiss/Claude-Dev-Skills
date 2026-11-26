@@ -143,20 +143,33 @@ def cited(mem, fact, lines):
 
 
 def bounded(refs, numbers, fm, tz):
-    """not-before = newest cited issue/PR; modified: adds a not-after (a range) only if consistent."""
+    """not-before = newest cited issue/PR, with modified: (a not-after) making a range.
+
+    A citation can be added in a later edit. When modified: predates the newest cited issue,
+    the issue bounds only that later edit, not creation: the fact is known only to be no newer
+    than modified:, so it is dated not-after modified: and the late citation is shown.
+    """
     dated = [(iso_day(refs.get(n)), n) for n in numbers]
     dated = [(d, n) for d, n in dated if d]
     if not dated:
         return None
     newest, ref = max(dated)
     date = _lib.day_of(newest, tz)
-    mod = _lib.DATE_RE.search(fm.get('modified', ''))
-    after = '-'.join(mod.groups()) if mod else None
+    after = modified_day(fm.get('modified', ''), tz)
     if after and after >= date:
         return _lib.found(date, 'issue', 'range', not_after=after, ref=ref)
-    if after:  # modified earlier than a cited issue: a contradiction, shown and counted, never hidden
-        return _lib.found(date, 'issue', 'not-before', ref=ref, conflict=after)
+    if after:  # the citation came in a later edit: creation is bounded only by modified:
+        return _lib.found(after, 'modified', 'not-after', ref=ref, cited_later=date)
     return _lib.found(date, 'issue', 'not-before', ref=ref)
+
+
+def modified_day(value, tz):
+    """Day of a modified: stamp in tz. An ISO timestamp is converted; a bare date is taken as written."""
+    when = iso_day(value) if 'T' in value else None
+    if when:
+        return _lib.day_of(when, tz)
+    mod = _lib.DATE_RE.search(value)
+    return '-'.join(mod.groups()) if mod else None
 
 
 def resolve(mem, cfg, refs=None, sessions=False):
@@ -205,9 +218,9 @@ def main(argv):
     for note in notes:
         print('dates: ' + note)
     counts = collections.Counter(i['quality'] for i in table.values())
-    clashes = sum(1 for i in table.values() if i.get('conflict'))
+    late = sum(1 for i in table.values() if i.get('cited_later'))
     print(f'dates: {len(table)} facts; ' + ', '.join(f'{q} {n}' for q, n in sorted(counts.items()))
-          + f'; contradictions (modified earlier than a cited issue) {clashes}')
+          + f'; citations added after modified: (dated not-after modified:) {late}')
 
 
 if __name__ == '__main__':

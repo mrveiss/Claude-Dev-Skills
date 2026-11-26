@@ -187,7 +187,7 @@ def main(argv):
     grouped(mem, cat, 'by-issue', 'issue or PR', 'Entries naming an issue or PR, grouped per thousand.',
             rows, issue_groups, label=lambda g: f'#{g}')
     print(f'rows {len(rows)}; dated from file {sum(r.src == "file" for r in rows)}; '
-          f'bounded {sum(r.quality in ("not-before", "range") for r in rows)}; '
+          f'bounded {sum(r.quality in ("not-before", "range", "not-after") for r in rows)}; '
           f'unknown {sum(r.date == "unknown" for r in rows)}')
 
 
