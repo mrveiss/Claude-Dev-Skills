@@ -186,6 +186,9 @@ class WithGh(unittest.TestCase):
         self.assertEqual(dates.modified_day('2026-08-17T22:28:25.515Z', riga), '2026-08-18')
         self.assertEqual(dates.modified_day('2026-08-17T20:00:00Z', riga), '2026-08-17')
         self.assertEqual(dates.modified_day('2026-08-17', riga), '2026-08-17')
+        self.assertEqual(dates.modified_day('2026-08-17T22:28:25.5Z', riga), '2026-08-18')
+        self.assertIsNone(dates.modified_day('2026-13-45T99:00Z', riga))
+        self.assertIsNone(dates.modified_day('2026-13-45', riga))
 
     def test_never_edits_a_fact_file(self):
         self.assertEqual(sha_tree(self.mem, only_root=True), self.before)

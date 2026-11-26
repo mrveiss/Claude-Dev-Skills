@@ -34,8 +34,10 @@ def claude_dir():
 def iso_day(stamp):
     if not stamp:
         return None
+    # pad fractional seconds to 6 digits: older Pythons parse only 3 or 6
+    stamp = re.sub(r'\.(\d{1,6})', lambda m: '.' + m.group(1).ljust(6, '0'), stamp.replace('Z', '+00:00'), count=1)
     try:
-        when = datetime.datetime.fromisoformat(stamp.replace('Z', '+00:00'))
+        when = datetime.datetime.fromisoformat(stamp)
     except ValueError:
         return None
     return when.astimezone(datetime.timezone.utc)
@@ -168,8 +170,13 @@ def modified_day(value, tz):
     when = iso_day(value) if 'T' in value else None
     if when:
         return _lib.day_of(when, tz)
+    if 'T' in value:
+        return None  # an unparseable timestamp is not a date
     mod = _lib.DATE_RE.search(value)
-    return '-'.join(mod.groups()) if mod else None
+    try:
+        return datetime.date.fromisoformat('-'.join(mod.groups())).isoformat() if mod else None
+    except ValueError:
+        return None
 
 
 def resolve(mem, cfg, refs=None, sessions=False):

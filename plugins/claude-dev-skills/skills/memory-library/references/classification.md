@@ -42,5 +42,5 @@ room -> shelf -> author -> chapter -> date
 - Sources 3-4 come from `library/dates.json` (written by `dates.py`, see `shelving.md`); without it the catalogue uses only the first and last rows. `github_repo` in `classes.json` names the repo for `#N` lookups.
 - `modified:` is read in the configured zone: an ISO timestamp is converted before taking its day, so an evening UTC edit is not a day early. `dates.py` counts the not-after cases.
 - Days are computed in `timezone` from `classes.json` (IANA name), else the machine's local zone.
-- by-date groups by the month of the best date; a `≥` entry sits in its not-before month and stays marked.
+- by-date groups by the month of the best date; a `≥` entry sits in its not-before month and stays marked; a `≤` entry sits in the month of its `modified:`.
 - Sorting call numbers as text gives facet order (that is why the order is fixed).
