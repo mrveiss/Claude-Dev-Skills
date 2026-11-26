@@ -22,7 +22,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _lib  # noqa: E402
 
-HEX_RE = re.compile(r'[0-9a-f]+')
+HEX_RE = re.compile(r'[0-9a-f]{8,}')  # a sid shorter than MIN_SID is never a mapping
 UNSAFE_CMD_RE = re.compile(r'[;|&<>$`\\"\'(){}*?!#\[\]\n]')
 MIN_SID = 8  # a recorded sid prefix shorter than this is not distinctive enough to match on
 

@@ -133,6 +133,10 @@ class WithoutLedger(unittest.TestCase):
         self.assertEqual(authors.parse_row('autobot-ai-busy    alive      sid 77778888  socket 6.sock'), ('autobot-ai-busy', '77778888'))
         self.assertIsNone(authors.parse_row('autobot-ai-bad     no beat    socket 99998888.sock seen 11-19 00:41  (was sidecar 77776666)'))
         self.assertIsNone(authors.parse_row('x sid'))
+        self.assertIsNone(authors.parse_row('short          no beat    sid abc123  socket 1.sock'))
+        self.assertEqual(authors.parse_row('hexcol   no beat  deadbeefcafe  sid 99990000  socket 7.sock'), ('hexcol', '99990000'))
+        rows = [('autobot-ai-p', '12345678')]
+        self.assertEqual(authors.ledger_name(rows, '12345678-aaaa-4bbb-8ccc-000000000000'), 'autobot-ai-p')
 
     def test_named_and_auto_named_rows_sharing_a_sid_stay_unrecorded(self):
         sys.path.insert(0, SCRIPTS)
