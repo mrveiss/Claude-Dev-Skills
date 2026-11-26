@@ -154,6 +154,42 @@ class BuildCatalogTests(unittest.TestCase):
         self.assertIn('](../../../gotcha_train_0.md)', text)
 
 
+class WriteGuardTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp, self.mem = make_fixture(n_bulk=1)
+        self.outside = os.path.join(self.tmp, 'outside')
+        os.makedirs(self.outside)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp)
+
+    def test_write_text_refuses_dotdot_dir(self):
+        with self.assertRaises(RuntimeError):
+            _lib.write_text(self.mem, os.path.join(self.mem, 'library', '..', '..', 'x.md'), 'x')
+        self.assertFalse(os.path.exists(os.path.join(os.path.dirname(self.mem), 'x.md')))
+
+    def test_classes_with_dotdot_room_dir_writes_nothing_outside(self):
+        path = os.path.join(self.mem, 'library', 'classes.json')
+        with open(path, encoding='utf-8') as fh:
+            cfg = json.load(fh)
+        cfg['rooms']['REF']['dir'] = '../..'
+        with open(path, 'w', encoding='utf-8') as fh:
+            json.dump(cfg, fh)
+        before = sha_tree(self.tmp)
+        r = run('build.py', self.mem, 'CI')
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('refusing to write outside library/', r.stderr)
+        self.assertEqual(sha_tree(self.tmp), before)
+
+    def test_symlinked_dir_pointing_outside_is_refused(self):
+        os.symlink(self.outside, os.path.join(self.mem, 'library', 'reference'))
+        with self.assertRaises(RuntimeError):
+            _lib.write_text(self.mem, os.path.join(self.mem, 'library', 'reference', 'a.md'), 'x')
+        r = run('build.py', self.mem, 'CI')
+        self.assertNotEqual(r.returncode, 0)
+        self.assertEqual(os.listdir(self.outside), [])
+
+
 class CallNumberTests(unittest.TestCase):
     def test_format_follows_facet_order(self):
         self.assertEqual(_lib.call_number('REF', 'CI', 'owner', 'TRN', '2026-11-12'),
@@ -229,6 +265,24 @@ class HookTests(unittest.TestCase):
         self.assertEqual(hook('Edit', self.p('new.md'), '', name='Edit').returncode, 0)
         self.assertEqual(hook('Write', os.path.join(self.tmp, 'README.md'), 'x').returncode, 0)
         self.assertEqual(hook('Write', self.p('data.json'), '{}').returncode, 0)
+
+    def test_dotdot_path_is_not_exempt(self):
+        r = hook('Write', self.p('library', '..', 'evil.md'), 'no frontmatter')
+        self.assertEqual(r.returncode, 2)
+
+    def test_malformed_json_and_missing_file_path_fail_open(self):
+        bad = subprocess.run([sys.executable, '-I', HOOK], input='{not json', capture_output=True, text=True)
+        self.assertNotEqual(bad.returncode, 2)
+        payload = json.dumps({'tool_name': 'Write', 'tool_input': {'content': 'x'}})
+        r = subprocess.run([sys.executable, '-I', HOOK], input=payload, capture_output=True, text=True)
+        self.assertNotEqual(r.returncode, 2)
+
+    def test_backslash_path_to_new_fact_blocks(self):
+        win = 'C:\\Users\\u\\.claude\\projects\\p\\memory\\feedback_x.md'
+        self.assertEqual(hook('Write', win, 'no frontmatter').returncode, 2)
+        self.assertEqual(hook('Write', win, GOOD).returncode, 0)
+        exempt = 'C:\\Users\\u\\.claude\\projects\\p\\memory\\topics\\t.md'
+        self.assertEqual(hook('Write', exempt, 'x').returncode, 0)
 
     def test_hooks_json_points_at_the_script(self):
         path = os.path.join(os.path.dirname(os.path.dirname(SKILL)), 'hooks', 'hooks.json')

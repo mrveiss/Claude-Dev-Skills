@@ -7,6 +7,7 @@ pattern <...>/.claude/projects/<project>/memory/, never hard-coded.
 """
 import json
 import os
+import posixpath
 import re
 import sys
 
@@ -20,7 +21,7 @@ DATE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 
 def is_fact_path(path):
     """True for a non-exempt .md file under a memory dir."""
-    m = MEMORY_PATH.match(path.replace(os.sep, '/'))
+    m = MEMORY_PATH.match(posixpath.normpath(path.replace('\\', '/')))
     if not m or not m.group('rel').endswith('.md'):
         return False
     rel = m.group('rel')
