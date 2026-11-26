@@ -170,7 +170,7 @@ def mtimes(root):
             for b, _, fs in os.walk(root) for f in fs}
 
 
-class IncrementalTests(unittest.TestCase):
+class FullBuildWriteSetTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.full_tmp, cls.full = make_fixture(new_fact=True)
@@ -190,7 +190,7 @@ class IncrementalTests(unittest.TestCase):
         with open(os.path.join(cls.mem, 'topics', 'ci-merge.md'), encoding='utf-8') as fh:
             lines = [ln.rstrip('\n') for ln in fh if ln.startswith('- [')]
         write_source(cls.mem, lines + [NEW_LINE])
-        cls.res = run('build.py', cls.mem, '--fact', NEW_FACT)
+        cls.res = [run('build.py', cls.mem, 'CI'), run('catalog.py', cls.mem)]
 
     @classmethod
     def tearDownClass(cls):
@@ -198,9 +198,10 @@ class IncrementalTests(unittest.TestCase):
         shutil.rmtree(cls.full_tmp, ignore_errors=True)
 
     def test_succeeds(self):
-        self.assertEqual(self.res.returncode, 0, self.res.stderr)
+        for r in self.res:
+            self.assertEqual(r.returncode, 0, r.stderr)
 
-    def test_byte_identical_to_full_build(self):
+    def test_byte_identical_to_build_with_the_fact_from_the_start(self):
         lib = sha_tree(self.lib)
         self.assertEqual(lib, sha_tree(os.path.join(self.full, 'library')))
 
@@ -227,10 +228,6 @@ class IncrementalTests(unittest.TestCase):
     def test_existing_facts_untouched(self):
         self.assertEqual(sha_tree(self.mem, only_root=True),
                          sha_tree(os.path.join(self.full, ''), only_root=True))
-
-    def test_unlisted_fact_is_refused(self):
-        r = run('build.py', self.mem, '--fact', 'nope.md')
-        self.assertEqual(r.returncode, 2)
 
 
 class WriteGuardTests(unittest.TestCase):

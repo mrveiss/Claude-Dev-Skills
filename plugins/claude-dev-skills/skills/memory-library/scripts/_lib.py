@@ -85,7 +85,7 @@ def write_text(mem, path, text):
     if not real.startswith(lib):
         raise RuntimeError(f'refusing to write outside library/: {path}')
     os.makedirs(os.path.dirname(real), exist_ok=True)
-    if os.path.isfile(real):  # unchanged content keeps its mtime (incremental builds rely on it)
+    if os.path.isfile(real):  # unchanged content keeps its mtime (a full build rewrites only what changed)
         with open(real, encoding='utf-8') as fh:
             if fh.read() == text:
                 return
